@@ -1,15 +1,666 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html>
 <head>
+<base target="_blank">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>Painel de contratos – R.E.D.</title>
-<meta http-equiv="refresh" content="0; url=https://script.google.com/macros/s/AKfycbxLgfQLKRHvKa-dCZefVPX6jKyKvZMqT2azf-TUoVFiEFhwrLf29zpvCsY9AeB2RslG/exec?painel=admin">
-<script>location.replace('https://script.google.com/macros/s/AKfycbxLgfQLKRHvKa-dCZefVPX6jKyKvZMqT2azf-TUoVFiEFhwrLf29zpvCsY9AeB2RslG/exec?painel=admin');</script>
-<style>body{font-family:Arial,sans-serif;background:#1f2a44;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}a{color:#fca5a5}</style>
+<script>window.API_URL = "https://script.google.com/macros/s/AKfycbxLgfQLKRHvKa-dCZefVPX6jKyKvZMqT2azf-TUoVFiEFhwrLf29zpvCsY9AeB2RslG/exec";</script>
+<style>
+  :root{--azul:#1f2a44;--verm:#b91c1c;--borda:#d9dde5;--fundo:#f4f5f8;--suave:#5b6475}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:14px;color:#1b1f2a;background:var(--fundo)}
+  .abas{display:flex;gap:4px;background:var(--azul);padding:8px 10px 0}
+  .aba{background:transparent;color:#cbd5e1;border:0;padding:9px 14px;border-radius:8px 8px 0 0;cursor:pointer;font-weight:700;font:inherit}
+  .aba.ativa{background:var(--fundo);color:var(--azul)}
+  .tela{display:none;height:calc(100vh - 42px)}
+  @media(max-width:800px){.topo{flex-direction:column}.aba{padding:9px 8px;font-size:13px}.tela.ativa{flex-direction:column;height:auto}.lista{width:100%;max-height:45vh}.grade{grid-template-columns:1fr 1fr}}
+  .tela.ativa{display:flex}
+  .lista{width:340px;border-right:1px solid var(--borda);display:flex;flex-direction:column;background:#fff}
+  .filtros{padding:10px;border-bottom:1px solid var(--borda);display:grid;gap:6px}
+  .itens{overflow:auto;flex:1}
+  .item{padding:10px 12px;border-bottom:1px solid #eef0f4;cursor:pointer}
+  .item:hover{background:#f8fafc}.item.sel{background:#fef2f2;border-left:3px solid var(--verm)}
+  .item .n{font-weight:700}.item .s{font-size:12px;color:var(--suave)}
+  .tag{display:inline-block;font-size:11px;font-weight:700;border-radius:20px;padding:2px 8px;margin-top:3px}
+  .t-Pendente{background:#fef3c7;color:#92400e}.t-Aguardando{background:#e0e7ff;color:#3730a3}
+  .t-Aprovado{background:#dcfce7;color:#166534}.t-Enviado{background:#e2e8f0;color:#334155}
+  .neg{background:#fee2e2;color:#991b1b}
+  .detalhe{flex:1;overflow:auto;padding:16px}
+  .vazio{color:var(--suave);text-align:center;margin-top:80px}
+  .card{background:#fff;border:1px solid var(--borda);border-radius:10px;padding:14px;margin-bottom:12px}
+  .card h3{margin:0 0 10px;font-size:14px;text-transform:uppercase;letter-spacing:.5px;color:var(--azul)}
+  .grade{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 10px}
+  .grade .dois{grid-column:span 2}.grade .tres{grid-column:1/-1}
+  label{display:block;font-size:12px;font-weight:700;color:var(--suave);margin-bottom:2px}
+  input,select,textarea{width:100%;padding:7px 9px;border:1px solid var(--borda);border-radius:6px;font:inherit;background:#fff}
+  textarea.texto{font-family:Consolas,Menlo,monospace;font-size:12.5px;line-height:1.5;min-height:360px}
+  button{font:inherit;font-weight:700;border:0;border-radius:7px;padding:8px 12px;cursor:pointer}
+  .b1{background:var(--verm);color:#fff}.b2{background:#fff;border:1px solid var(--borda)}
+  .b3{background:#16a34a;color:#fff}.b4{background:#25d366;color:#073b1d}.bx{background:#fff;color:#991b1b;border:1px solid #fecaca}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .barra{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .topo{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}
+  .topo h2{margin:0;font-size:18px}.topo .s{color:var(--suave);font-size:13px}
+  .msg{padding:9px 12px;border-radius:7px;margin-bottom:12px;display:none}
+  .msg.ok{display:block;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
+  .msg.erro{display:block;background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+  .msg.info{display:block;background:#eff6ff;color:#1e3a8a;border:1px solid #bfdbfe}
+  .prev{border:1px solid var(--borda);border-radius:8px;padding:16px;max-height:520px;overflow:auto;background:#fff}
+  .assin img{max-height:90px;border:1px solid var(--borda);border-radius:6px;background:#fff}
+  pre.hist{white-space:pre-wrap;font-size:12px;color:#334155;margin:0}
+  .alerta{background:#fff7ed;border:1px solid #fdba74;border-radius:8px;padding:10px;margin-bottom:12px}
+  .ajuda{color:var(--suave);font-size:13px;line-height:1.5}
+  code{background:#f1f5f9;padding:1px 5px;border-radius:4px;font-size:12px}
+  table.campos{border-collapse:collapse;width:100%;font-size:13px}
+  table.campos td{border-bottom:1px solid #eef0f4;padding:5px 6px;vertical-align:top}
+  .oculto{display:none!important}
+  .importar{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px;margin-bottom:6px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .importar input[type=file]{width:auto;background:#fff}
+  .rec{border:1px solid #eef0f4;border-radius:8px;padding:10px;margin-bottom:8px;background:#fafbfc}
+  .rec-tit{font-weight:700;margin-bottom:6px}
+  .copia{background:#fff;border:1px solid var(--borda);border-radius:6px;padding:4px 8px}
+  button.mini,a.mini{padding:4px 9px;font-size:12px}
+  a.lk{text-decoration:none;color:#1b1f2a;display:inline-block;border-radius:7px;font-weight:700}
+  .card-alerta{border-color:#fdba74;box-shadow:0 0 0 2px #ffedd5}
+  #login{position:fixed;inset:0;background:var(--azul);display:flex;align-items:center;justify-content:center;z-index:10;padding:16px}
+  #login .caixa{background:#fff;border-radius:12px;padding:24px;width:100%;max-width:360px}
+  #login h1{font-size:18px;margin:0 0 4px}#login p{color:var(--suave);margin:0 0 14px;font-size:13px}
+  #login input{padding:11px;font-size:15px;margin-bottom:10px}#login button{width:100%;padding:11px}
+</style>
 </head>
 <body>
-<p>Abrindo o painel… <a href="https://script.google.com/macros/s/AKfycbxLgfQLKRHvKa-dCZefVPX6jKyKvZMqT2azf-TUoVFiEFhwrLf29zpvCsY9AeB2RslG/exec?painel=admin">clique aqui</a> se não abrir.</p>
+<div id="login">
+  <form class="caixa" id="formLogin">
+    <h1>Painel de contratos</h1>
+    <p>R.E.D. English Course · acesso do administrador</p>
+    <input type="password" id="senha" placeholder="Senha do administrador" autocomplete="current-password">
+    <button class="b1" type="submit" id="btnLogin">Entrar</button>
+    <div class="msg" id="msgLogin" style="margin:10px 0 0"></div>
+  </form>
+</div>
+<div class="abas">
+  <button class="aba ativa" data-tela="tContratos">Contratos</button>
+  <button class="aba" data-tela="tModelos">Atualizar modelos</button>
+  <button class="aba" data-tela="tAjuda">Links e ajuda</button>
+</div>
+
+<!-- ======================= CONTRATOS ======================= -->
+<div class="tela ativa" id="tContratos">
+  <div class="lista">
+    <div class="filtros">
+      <input id="busca" placeholder="Buscar por nome, aluno ou ID">
+      <div class="barra">
+        <select id="filtroStatus" style="flex:1">
+          <option value="">Todos os status</option>
+          <option>Pendente</option><option>Aguardando novo aceite</option><option>Aprovado</option><option>Enviado</option>
+        </select>
+        <button class="b2" id="btnAtualizar" title="Atualizar lista">↻</button>
+      </div>
+    </div>
+    <div class="itens" id="itens"><div class="vazio">Carregando…</div></div>
+  </div>
+  <div class="detalhe" id="detalhe"><div class="vazio">Selecione um contrato na lista.</div></div>
+</div>
+
+<!-- ======================= MODELOS ======================= -->
+<div class="tela" id="tModelos">
+  <div class="detalhe">
+    <div class="msg" id="msgModelo"></div>
+    <div class="card">
+      <div class="barra" style="margin-bottom:10px">
+        <select id="selModelo" style="max-width:320px"></select>
+        <span class="ajuda" id="infoModelo"></span>
+      </div>
+      <p class="ajuda" style="margin-top:0">Altere o texto e clique em <b>Salvar nova versão</b>. Contratos novos passam a usar o novo texto na hora.
+        Contratos já assinados <b>não mudam</b>: cada um guarda a versão que o aluno aceitou. Para mudar um contrato já assinado, abra-o na aba Contratos.</p>
+      <div class="importar">
+        <b>Atualizar a partir de um arquivo:</b>
+        <input type="file" id="arqModelo" accept=".docx,.doc,.pdf">
+        <button class="b2" id="btnImportar">Ler arquivo e colocar no editor</button>
+        <div class="ajuda" style="margin-top:6px">Aceita Word (.docx ou .doc) e PDF. O texto vai para o editor abaixo, <b>sem salvar</b>: confira, troque os dados de exemplo pelos campos e só então clique em "Salvar nova versão".</div>
+      </div>
+      <div class="barra" style="margin:8px 0">
+        <select id="selCampo" style="max-width:360px"></select>
+        <button class="b2" id="btnInserirCampo">Inserir campo onde está o cursor</button>
+      </div>
+      <textarea id="txtModelo" class="texto" style="min-height:440px"></textarea>
+      <div class="barra" style="margin-top:8px">
+        <input id="motivoModelo" placeholder="Motivo da alteração (ex.: ajuste da multa aprovado pela empresa)" style="flex:1">
+        <button class="b2" id="btnPrevModelo">Pré-visualizar</button>
+        <button class="b1" id="btnSalvarModelo">Salvar nova versão</button>
+      </div>
+    </div>
+    <div class="card oculto" id="cardPrevModelo"><h3>Pré-visualização (com dados de exemplo)</h3><div class="prev" id="prevModelo"></div></div>
+    <div class="card"><h3>Versões anteriores</h3><div id="histModelo" class="ajuda"></div></div>
+  </div>
+</div>
+
+<!-- ======================= AJUDA ======================= -->
+<div class="tela" id="tAjuda">
+  <div class="detalhe">
+    <div class="card">
+      <h3>Link da página do aluno</h3>
+      <div id="linksAluno" class="ajuda"></div>
+    </div>
+    <div class="card">
+      <h3>Campos que você pode usar no texto do contrato</h3>
+      <p class="ajuda">Escreva o campo entre chaves duplas, por exemplo <code>{{nome}}</code>. O sistema troca pelo dado do aluno.</p>
+      <table class="campos" id="tabCampos"></table>
+    </div>
+    <div class="card">
+      <h3>Formatação do texto</h3>
+      <div class="ajuda">
+        <code># Título</code> título centralizado ·
+        <code>## Seção</code> subtítulo ·
+        <code>- item</code> lista ·
+        linhas que começam com <code>CLÁUSULA 1ª</code>, <code>§1º</code> ou <code>PARÁGRAFO ÚNICO</code> ficam com o rótulo em negrito.
+      </div>
+    </div>
+    <div class="card">
+      <h3>Onde mudar o resto</h3>
+      <div class="ajuda">
+        <b>Valores, parcelas e planos:</b> aba <b>Planos</b> da planilha do sistema (para esconder um plano, escreva <i>Não</i> na coluna Ativo).<br>
+        <b>Dados da escola, testemunhas, áudios, mensagens e senha:</b> aba <b>Configurações</b> da planilha do sistema.<br>
+        <b>Excluir um contrato:</b> abra o contrato e use o botão <b>Excluir</b> (apaga o contrato do sistema, a assinatura e o PDF). A planilha de matrículas nunca é alterada pelo sistema.
+      </div>
+    </div>
+  </div>
+</div>
+
+<style id="cssContrato"></style>
+<script>
+/* =====================================================================
+   RENDER – funções compartilhadas entre a página do aluno, o painel
+   do administrador e o PDF. NÃO renomeie este arquivo: ele deve se
+   chamar exatamente "Render" no Apps Script.
+   ===================================================================== */
+
+var MESES_ = ['janeiro','fevereiro','março','abril','maio','junho','julho',
+              'agosto','setembro','outubro','novembro','dezembro'];
+
+function esc_(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
+function dataExtenso(dt) {
+  dt = dt || new Date();
+  return dt.getDate() + ' de ' + MESES_[dt.getMonth()] + ' de ' + dt.getFullYear();
+}
+
+/* Junta os dados do aluno + dados da empresa num único objeto
+   usado para trocar os {{campos}} do texto do contrato. */
+function montarDados(d, cfg) {
+  var o = {};
+  var k;
+  for (k in d) o[k] = d[k];
+  cfg = cfg || {};
+  var partes = [
+    d.endereco,
+    d.bairro,
+    d.cep ? 'CEP ' + d.cep : '',
+    [d.cidade, d.uf].filter(function (x) { return x && String(x).trim(); }).join(' - ')
+  ];
+  o.endereco_completo = partes.filter(function (x) { return x && String(x).trim(); }).join(', ');
+  o.empresa_nome = cfg.empresa_nome;
+  o.empresa_razao = cfg.empresa_razao;
+  o.empresa_cnpj = cfg.empresa_cnpj;
+  o.empresa_endereco = cfg.empresa_endereco;
+  o.data_extenso = d.dataContrato || dataExtenso(new Date());
+  o.documento_contratante = d.tipo === 'PJ' ? (d.pjCnpj || '') : (d.cpf || '');
+  o.aluno_ficha = d.tipo === 'PF' ? (d.nome || '') : (d.alunoNome || '');
+  return o;
+}
+
+/* Transforma o texto do modelo (com {{campos}}) em HTML.
+   Regras de formatação do texto:
+     # Título            -> título centralizado
+     ## Seção            -> subtítulo da seção
+     - item              -> item de lista
+     CLÁUSULA 1ª / §1º / PARÁGRAFO ÚNICO no início -> rótulo em negrito
+     linha em branco     -> separa parágrafos                              */
+function renderContrato(texto, dados, opts) {
+  opts = opts || {};
+  dados = dados || {};
+  var vazio = opts.pdf ? '__________' : '<span class="ct-vazio">__________</span>';
+  var linhas = String(texto || '').replace(/\r/g, '').split('\n');
+  var html = [];
+  var emLista = false;
+
+  function trocar(s) {
+    return esc_(s).replace(/\{\{\s*([a-zA-Z_0-9]+)\s*\}\}/g, function (m, chave) {
+      var v = dados[chave];
+      if (v === undefined || v === null || String(v).trim() === '') return vazio;
+      return opts.pdf ? esc_(v) : '<b class="ct-campo">' + esc_(v) + '</b>';
+    });
+  }
+  function rotulo(s) {
+    return s.replace(/^(CLÁUSULA\s+[\d.]+ª\.?|§\s*\d+º|PARÁGRAFO\s+(?:ÚNICO|\d+º)\.?:?)/i, '<b>$1</b>');
+  }
+  function fecharLista() { if (emLista) { html.push('</ul>'); emLista = false; } }
+
+  linhas.forEach(function (bruta) {
+    var l = bruta.trim();
+    if (!l) { fecharLista(); return; }
+    if (l.indexOf('## ') === 0) { fecharLista(); html.push('<h2 class="ct-h2">' + trocar(l.slice(3)) + '</h2>'); return; }
+    if (l.indexOf('# ') === 0) { fecharLista(); html.push('<h1 class="ct-h1">' + trocar(l.slice(2)) + '</h1>'); return; }
+    if (l.indexOf('- ') === 0) {
+      if (!emLista) { html.push('<ul class="ct-ul">'); emLista = true; }
+      html.push('<li>' + trocar(l.slice(2)) + '</li>');
+      return;
+    }
+    fecharLista();
+    html.push('<p class="ct-p">' + rotulo(trocar(l)) + '</p>');
+  });
+  fecharLista();
+  return '<div class="ct">' + html.join('') + '</div>';
+}
+
+/* Bloco final de assinaturas (usado na pré-visualização e no PDF). */
+function assinaturasHtml(d, cfg, assinaturaDataUrl, meta) {
+  cfg = cfg || {};
+  meta = meta || {};
+  var docContratante = d.tipo === 'PJ'
+    ? (esc_(d.pjRepNome || '') + ' – CPF: ' + esc_(d.pjRepCpf || '') + '<br>Representante legal de ' + esc_(d.pjRazao || '') + ' – CNPJ: ' + esc_(d.pjCnpj || ''))
+    : (esc_(d.nome || '') + '<br>CPF: ' + esc_(d.cpf || ''));
+  var img = assinaturaDataUrl
+    ? '<img src="' + assinaturaDataUrl + '" style="height:70px;max-width:260px;display:block">'
+    : '<div style="height:60px"></div>';
+  var registro = meta.assinadoEm
+    ? '<p class="ct-reg">Assinado eletronicamente em ' + esc_(meta.assinadoEm) +
+      (meta.email ? ', com confirmação por código enviado para ' + esc_(meta.email) : '') +
+      '. Identificador do contrato: ' + esc_(meta.id || '') +
+      (meta.versao ? ' · Versão do modelo: ' + esc_(meta.versao) : '') + '.' +
+      (meta.hash ? '<br>Código de integridade (SHA-256) do texto assinado: <span style="font-family:monospace">' + esc_(meta.hash) + '</span>' : '') +
+      (meta.ip ? '<br>IP na assinatura: ' + esc_(meta.ip) : '') +
+      (meta.dispositivo ? '<br>Dispositivo/navegador: ' + esc_(meta.dispositivo) : '') +
+      (meta.comprovanteEm ? '<br>Cópia integral enviada ao e-mail do contratante em ' + esc_(meta.comprovanteEm) + '.' : '') +
+      '</p>'
+    : '';
+  if (meta.recibo) {
+    return '<div class="ct-ass"><div class="ct-ass-bloco"><div class="ct-ass-tit">EMITIDO POR ' + esc_(cfg.empresa_nome || '') + '</div>' +
+      '<div style="height:50px"></div><div class="ct-linha"></div><div>' + esc_(cfg.empresa_rep_nome || '') +
+      '<br>' + esc_(cfg.empresa_rep_cargo || '') + '</div></div>' +
+      (meta.id ? '<p class="ct-reg">Recibo nº ' + esc_(meta.id) + (meta.assinadoEm ? ' · dados e comprovante enviados pelo aluno em ' + esc_(meta.assinadoEm) +
+        (meta.email ? ' (e-mail ' + esc_(meta.email) + ' confirmado por código)' : '') : '') + '.</p>' : '') + '</div>';
+  }
+  return '<div class="ct-ass">' +
+    '<div class="ct-ass-bloco"><div class="ct-ass-tit">CONTRATANTE</div>' + img +
+      '<div class="ct-linha"></div><div>' + docContratante + '</div></div>' +
+    '<div class="ct-ass-bloco"><div class="ct-ass-tit">REPRESENTANTE LEGAL ' + esc_(cfg.empresa_nome || '') + '</div>' +
+      '<div style="height:60px"></div><div class="ct-linha"></div><div>' +
+      esc_(cfg.empresa_rep_nome || '') + (cfg.empresa_rep_cpf ? ' – CPF: ' + esc_(cfg.empresa_rep_cpf) : '') +
+      '<br>' + esc_(cfg.empresa_rep_cargo || '') + '</div></div>' +
+    '<div class="ct-ass-bloco"><div class="ct-ass-tit">TESTEMUNHAS</div>' +
+      '<div>1: ' + esc_(cfg.testemunha1 || '') + '</div><div>2: ' + esc_(cfg.testemunha2 || '') + '</div></div>' +
+    registro + '</div>';
+}
+
+var CSS_CONTRATO =
+  '.ct{font-family:Arial,Helvetica,sans-serif;font-size:12.5px;line-height:1.55;color:#111;text-align:justify}' +
+  '.ct-h1{font-size:15px;text-align:center;margin:0 0 16px;letter-spacing:.3px}' +
+  '.ct-h2{font-size:12.5px;text-transform:uppercase;margin:18px 0 6px;text-align:center}' +
+  '.ct-p{margin:0 0 8px}.ct-ul{margin:0 0 8px 18px;padding:0}' +
+  '.ct-campo{background:#fff4c2;padding:0 2px;border-radius:2px}.ct-vazio{color:#b45309}' +
+  '.ct-ass{font-family:Arial,Helvetica,sans-serif;font-size:12px;margin-top:28px}' +
+  '.ct-ass-bloco{margin:0 0 22px;page-break-inside:avoid}.ct-ass-tit{font-weight:bold;margin-bottom:4px}' +
+  '.ct-linha{border-top:1px solid #333;width:300px;margin:2px 0 4px}' +
+  '.ct-reg{font-size:10.5px;color:#444;border-top:1px solid #ccc;padding-top:8px}';
+</script>
+
+<script>
+function $(id){ return document.getElementById(id); }
+document.getElementById('cssContrato').textContent = CSS_CONTRATO;
+function run(fn){
+  var args = Array.prototype.slice.call(arguments, 1);
+  if (window.API_URL) {
+    // Painel público (GitHub): conversa com o Apps Script pela API
+    return fetch(window.API_URL, { method: 'POST', body: JSON.stringify({ fn: fn, args: args }), redirect: 'follow' })
+      .then(function(r){ if(!r.ok) throw new Error('Falha de conexão ('+r.status+'). Tente de novo.'); return r.json(); })
+      .then(function(j){ if(!j.ok) throw new Error(j.erro || 'Erro.'); return j.r; }, function(e){ throw new Error(e && e.message && e.message.indexOf('conex')>=0 ? e.message : 'Sem conexão com o servidor. Verifique a internet e tente de novo.'); });
+  }
+  return new Promise(function(ok, falha){
+    var r = google.script.run.withSuccessHandler(ok).withFailureHandler(function(e){ falha(e && e.message ? e : new Error(String(e))); });
+    r[fn].apply(r, args);
+  });
+}
+var TOKEN = null;
+try { TOKEN = sessionStorage.getItem('tk_contratos'); } catch(e) {}
+function adm(fn){
+  var args = Array.prototype.slice.call(arguments, 1);
+  return run.apply(null, [fn, TOKEN].concat(args)).catch(function(e){
+    if(String(e.message).indexOf('SESSAO')===0){ mostrarLogin('Sua sessão expirou. Entre de novo.'); }
+    throw new Error(String(e.message).replace(/^SESSAO:\s*/,''));
+  });
+}
+function mostrarLogin(texto){ $('login').classList.remove('oculto'); if(texto) msg('msgLogin', texto, 'erro'); }
+function msg(id, texto, tipo){ var m=$(id); if(!m) return; m.className='msg '+(tipo||'ok'); m.textContent=texto; }
+
+/* ---------- abas ---------- */
+document.querySelectorAll('.aba').forEach(function(b){
+  b.addEventListener('click', function(){
+    document.querySelectorAll('.aba').forEach(function(x){ x.classList.remove('ativa'); });
+    document.querySelectorAll('.tela').forEach(function(x){ x.classList.remove('ativa'); });
+    b.classList.add('ativa'); $(b.dataset.tela).classList.add('ativa');
+    if(b.dataset.tela==='tModelos' && !MODELOS) carregarModelos();
+  });
+});
+
+var INICIO=null, LISTA=[], ATUAL=null, MODELOS=null;
+
+/* ======================= CONTRATOS ======================= */
+function tagStatus(s){ return '<span class="tag t-'+esc_(String(s).split(' ')[0])+'">'+esc_(s)+'</span>'; }
+
+function carregarLista(selecionar){
+  adm('admListar').then(function(l){ LISTA=l; desenharLista(); if(selecionar) abrir(selecionar); })
+    .catch(function(e){ $('itens').innerHTML='<div class="vazio">'+esc_(e.message)+'</div>'; });
+}
+function desenharLista(){
+  var q=$('busca').value.trim().toLowerCase(), st=$('filtroStatus').value;
+  var l=LISTA.filter(function(c){
+    return (!st || c.status===st) && (!q || (c.nome+' '+c.aluno+' '+c.id).toLowerCase().indexOf(q)>=0);
+  });
+  $('itens').innerHTML = l.length ? l.map(function(c){
+    return '<div class="item'+(ATUAL&&ATUAL.obj.id===c.id?' sel':'')+'" data-id="'+esc_(c.id)+'">'+
+      '<div class="n">'+esc_(c.nome)+'</div>'+
+      '<div class="s">'+(c.aluno?'Aluno: '+esc_(c.aluno)+' · ':'')+esc_(c.plano)+'</div>'+
+      '<div class="s">'+esc_(c.enviadoEm)+' · '+esc_(c.id)+'</div>'+
+      tagStatus(c.status)+(c.documento==='Recibo de pagamento'?' <span class="tag t-Enviado">sem compromisso</span>':'')+(c.negociar?' <span class="tag neg">quer negociar</span>':'')+'</div>';
+  }).join('') : '<div class="vazio">Nenhum contrato.</div>';
+  document.querySelectorAll('.item').forEach(function(el){ el.addEventListener('click', function(){ abrir(el.dataset.id); }); });
+}
+$('busca').addEventListener('input', desenharLista);
+$('filtroStatus').addEventListener('change', desenharLista);
+$('btnAtualizar').addEventListener('click', function(){ carregarLista(ATUAL && ATUAL.obj.id); });
+
+var CAMPOS_FORM = {
+  cadastro: [
+    ['nome','Contratante / Razão social','dois'],['cpf','CPF'],
+    ['nacionalidade','Nacionalidade'],['nascimento','Nascimento'],['email','E-mail'],
+    ['whatsapp','WhatsApp'],['instagram','Instagram'],['sexo','Sexo'],['cep','CEP'],['uf','UF'],
+    ['endereco','Rua e número','dois'],['bairro','Bairro'],['cidade','Cidade'],
+    ['alunoNome','Aluno – nome','dois'],['alunoCpf','Aluno – CPF'],['alunoNascimento','Aluno – nascimento'],
+    ['pjRazao','Razão social (PJ)','dois'],['pjCnpj','CNPJ'],['pjRepNome','Representante legal','dois'],['pjRepCpf','CPF do representante'],['pjRepNascimento','Nasc. do representante'],
+    ['conheceu','Onde conheceu a R.E.D.'],['interesse','Interesse em aprender inglês','dois']
+  ],
+  contrato: [
+    ['descricao','Descrição do plano (entra no contrato)','tres'],
+    ['valorParcela','Valor da parcela (R$)'],['parcelas','Parcelas'],['validade','Validade (meses)'],
+    ['primeiroPagamento','1º pagamento (dd/mm/aaaa)'],['diaVencimento','Dia de vencimento'],['formaPagamento','Forma de pagamento']
+  ]
+};
+function camposHtml(lista, o){
+  return lista.map(function(c){
+    if(c[0]==='descricao') return '<div class="tres"><label>'+c[1]+'</label><textarea data-k="descricao" rows="2">'+esc_(o.descricao)+'</textarea></div>';
+    return '<div class="'+(c[2]||'')+'"><label>'+c[1]+'</label><input data-k="'+c[0]+'" value="'+esc_(o[c[0]])+'"></div>';
+  }).join('');
+}
+
+function abrir(id){
+  $('detalhe').innerHTML='<div class="vazio">Carregando…</div>';
+  adm('admObter', id).then(function(r){ ATUAL=r; desenharDetalhe(); desenharLista(); })
+    .catch(function(e){ $('detalhe').innerHTML='<div class="vazio">'+esc_(e.message)+'</div>'; });
+}
+
+function recarregar(id, aviso, tipo){
+  return adm('admObter', id).then(function(r){ ATUAL=r; desenharDetalhe(aviso, tipo); carregarLista(); });
+}
+function receitaHtml(){
+  var pend = ATUAL.cpfs.filter(function(c){ return c.situacao!=='Regular'; }).length;
+  var linhas = ATUAL.cpfs.map(function(c){
+    var opts = '<option value="">Selecione o resultado…</option>' + ATUAL.situacoes.map(function(sx){ return '<option'+(sx===c.situacao?' selected':'')+'>'+esc_(sx)+'</option>'; }).join('');
+    var cor = c.situacao==='Regular' ? '#166534' : (c.situacao ? '#991b1b' : '#92400e');
+    return '<div class="rec">'+
+      '<div class="rec-tit">'+esc_(c.rotulo)+' – '+esc_(c.nome||'')+'</div>'+
+      '<div class="barra">'+
+        '<span class="copia">CPF: <b>'+esc_(c.cpf||'—')+'</b> <button class="b2 mini" data-copiar="'+esc_(String(c.cpf||'').replace(/\D/g,''))+'">copiar</button></span>'+
+        '<span class="copia">Nascimento: <b>'+esc_(c.nasc||'—')+'</b> <button class="b2 mini" data-copiar="'+esc_(c.nasc||'')+'">copiar</button></span>'+
+        '<a class="b2 mini lk" href="'+esc_(ATUAL.urlCpf)+'">Abrir site da Receita ↗</a>'+
+      '</div>'+
+      '<div class="barra" style="margin-top:6px"><select data-qual="'+c.qual+'" style="max-width:340px">'+opts+'</select>'+
+        '<button class="b2 mini" data-marcar="'+c.qual+'">Salvar resultado</button>'+
+        '<span style="color:'+cor+';font-weight:700">'+(c.situacao?esc_(c.situacao)+' · '+esc_(c.em):'Não conferido')+'</span></div>'+
+    '</div>';
+  }).join('');
+  var cnpj = ATUAL.obj.tipo==='PJ' ? '<div class="ajuda" style="margin-top:6px">CNPJ da empresa: <b>'+esc_(ATUAL.obj.pjCnpj)+'</b> <button class="b2 mini" data-copiar="'+esc_(String(ATUAL.obj.pjCnpj||'').replace(/\D/g,''))+'">copiar</button> <a class="b2 mini lk" href="'+esc_(ATUAL.urlCnpj)+'">Consultar CNPJ ↗</a> (opcional)</div>' : '';
+  return '<div class="card'+(pend?' card-alerta':'')+'"><h3>Conferência na Receita Federal</h3>'+
+    '<p class="ajuda" style="margin-top:0">Copie o CPF e a data, abra o site da Receita, resolva o "não sou um robô" e marque aqui o resultado. '+
+    (pend?'<b>O contrato só pode ser aprovado quando todos estiverem como Regular.</b>':'<b style="color:#166534">Tudo conferido ✓</b>')+'</p>'+linhas+cnpj+'</div>';
+}
+function desenharDetalhe(aviso, tipoAviso){
+  var o=ATUAL.obj, st=o.status;
+  var reaceite = st==='Aguardando novo aceite';
+  var temPdf = !!o.pdfId;
+  var cpfPend = ATUAL.cpfs.filter(function(c){ return c.situacao!=='Regular'; }).length > 0;
+  $('detalhe').innerHTML =
+    '<div class="topo"><div><h2>'+esc_(o.nome)+'</h2>'+
+      '<div class="s">'+esc_(o.documento||'Contrato')+' · '+esc_(ATUAL.nomeTipo)+' · '+esc_(o.planoNome)+' · '+esc_(o.id)+' · modelo v'+esc_(o.modeloVersao)+'</div>'+
+      '<div style="margin-top:6px">'+tagStatus(st)+'</div></div>'+
+    '<div class="barra">'+
+      '<button class="b2" id="aSalvar">Salvar alterações</button>'+
+      '<button class="b3" id="aAprovar"'+(reaceite?' disabled title="Aguardando o aluno aceitar a nova versão"':(cpfPend?' disabled title="Confira o CPF na Receita e marque como Regular"':''))+'>'+(ATUAL.ehRecibo?(temPdf?'Gerar recibo de novo':'Confirmar pagamento e gerar recibo'):(temPdf?'Gerar PDF de novo':'Aprovar e gerar PDF'))+'</button>'+
+      '<button class="b1" id="aEmail"'+(temPdf?'':' disabled title="Aprove primeiro"')+'>Enviar por e-mail</button>'+
+      '<button class="b4" id="aWhats"'+(temPdf?'':' disabled title="Aprove primeiro"')+'>WhatsApp</button>'+
+      '<button class="bx" id="aExcluir">Excluir</button>'+
+    '</div></div>'+
+    '<div class="msg" id="msgDet"></div>'+
+    (o.negociar ? '<div class="alerta"><b>O aluno quer negociar:</b> '+esc_(o.negociar)+'</div>' : '')+
+    (reaceite ? '<div class="alerta">O contrato foi alterado e o aluno precisa assinar a nova versão.<div class="barra" style="margin-top:8px">'+
+      '<button class="b1" id="aReaceite">Enviar link de novo aceite (e-mail + WhatsApp)</button></div></div>' : '')+
+    (ATUAL.ehRecibo ? '<div class="card'+(o.pdfId?'':' card-alerta')+'"><h3>Comprovante do PIX</h3>'+
+      (o.pagamentoUrl ? '<a class="b2 mini lk" href="'+esc_(o.pagamentoUrl)+'">Abrir comprovante enviado pelo aluno ↗</a>' : '<span class="ajuda">Nenhum comprovante anexado.</span>')+
+      '<p class="ajuda" style="margin-bottom:0">Confira no extrato da conta se o PIX de <b>R$ '+esc_(o.valorParcela)+'</b> realmente entrou antes de confirmar. Data informada pelo aluno: <b>'+esc_(o.primeiroPagamento)+'</b>.</p></div>' : '')+
+    receitaHtml()+
+    (temPdf ? '<div class="card"><h3>PDF</h3><a href="'+esc_(o.pdfUrl)+'">Abrir PDF no Drive</a>'+(o.pdfMesPasta?' · cópia na pasta <b>'+esc_(o.pdfMesPasta)+'</b>':' · <span style="color:#991b1b">sem cópia na pasta do mês</span> <button class="b2 mini" id="aCopiarMes">Salvar cópia na pasta do mês</button>')+(o.emailEnviadoEm?' · e-mail enviado em '+esc_(o.emailEnviadoEm):'')+'</div>' : '')+
+    '<div class="card"><h3>Dados de cadastro</h3><p class="ajuda" style="margin-top:0">Correções aqui não exigem nova assinatura. A planilha de matrículas não é alterada: se precisar, corrija lá manualmente.</p><div class="grade">'+camposHtml(CAMPOS_FORM.cadastro,o)+'</div></div>'+
+    '<div class="card"><h3>Plano e pagamento</h3><p class="ajuda" style="margin-top:0">'+(ATUAL.ehRecibo?'Ajustes aqui entram no recibo (não exigem nova assinatura).':'Mudar qualquer item daqui altera o contrato: o aluno terá de assinar de novo.')+'</p><div class="grade">'+camposHtml(CAMPOS_FORM.contrato,o)+'</div></div>'+
+    '<div class="card"><h3>'+(ATUAL.ehRecibo?'Texto deste recibo':'Texto deste contrato')+'</h3><p class="ajuda" style="margin-top:0">'+(ATUAL.ehRecibo?'Ajuste só se precisar mudar algo neste recibo.':'Use para negociar cláusulas só deste aluno. Ao salvar, o aluno recebe a nova versão para assinar.')+'</p>'+
+      '<textarea class="texto" data-k="texto">'+esc_(o.texto)+'</textarea>'+
+      '<div class="barra" style="margin-top:8px"><button class="b2" id="aPrev">Pré-visualizar como fica</button></div>'+
+      '<div class="prev oculto" id="prevDet" style="margin-top:10px"></div></div>'+
+    '<div class="card assin"><h3>'+(ATUAL.ehRecibo?'Registro do envio':'Assinatura e provas')+'</h3>'+(ATUAL.assinatura?'<img src="'+ATUAL.assinatura+'">':(ATUAL.ehRecibo?'':'<span class="ajuda">Sem assinatura.</span>'))+
+      '<div class="ajuda">Assinado em: <b>'+esc_(o.assinadoEm||'–')+'</b> · E-mail confirmado por código: <b>'+esc_(o.emailConfirmado||'–')+'</b> ('+esc_(o.email)+')'+
+      '<br>Comprovante com a íntegra enviado ao aluno em: <b>'+esc_(o.comprovanteEm||'–')+'</b>'+
+      '<br>IP: '+esc_(o.ip||'–')+' · Dispositivo: '+esc_(o.dispositivo||'–')+
+      '<br>Código de integridade (SHA-256): <code>'+esc_(o.hash||'–')+'</code></div></div>'+
+    '<div class="card"><h3>Histórico</h3><pre class="hist">'+esc_(o.historico||'')+'</pre></div>';
+
+  if(aviso) msg('msgDet', aviso, tipoAviso||'ok');
+
+  function coletar(){ var c={}; document.querySelectorAll('#detalhe [data-k]').forEach(function(el){ c[el.dataset.k]=el.value; }); return c; }
+  function ocupado(b, t){ b.disabled=true; b.dataset.t=b.textContent; b.textContent=t||'Aguarde…'; }
+  function livre(b){ b.disabled=false; if(b.dataset.t) b.textContent=b.dataset.t; }
+
+  $('aSalvar').onclick=function(){
+    var b=this; ocupado(b,'Salvando…');
+    adm('admSalvar', o.id, coletar()).then(function(r){ return recarregar(o.id, r.aviso, r.obj.status==='Aguardando novo aceite'?'info':'ok'); })
+      .catch(function(e){ livre(b); msg('msgDet', e.message, 'erro'); });
+  };
+  if($('aCopiarMes')) $('aCopiarMes').onclick=function(){
+    var b=this; ocupado(b,'Salvando…');
+    adm('admCopiarMes', o.id).then(function(r){ return recarregar(o.id, r.aviso, r.aviso.indexOf('ATENÇÃO')>=0?'erro':'ok'); })
+      .catch(function(e){ livre(b); msg('msgDet', e.message, 'erro'); });
+  };
+  $('aPrev').onclick=function(){
+    var b=this; ocupado(b,'Gerando…');
+    adm('admPreview', o.id, coletar()).then(function(h){ livre(b); $('prevDet').innerHTML=h; $('prevDet').classList.remove('oculto'); })
+      .catch(function(e){ livre(b); msg('msgDet', e.message, 'erro'); });
+  };
+  $('aAprovar').onclick=function(){
+    var mud = JSON.stringify(coletar()) !== JSON.stringify(camposAtuais(o));
+    if(mud && !confirm('Há alterações não salvas. Salve antes de aprovar. Aprovar mesmo assim, sem essas alterações?')) return;
+    var b=this; ocupado(b,'Gerando PDF…');
+    adm('admAprovar', o.id).then(function(r){ return recarregar(o.id, r.aviso, r.aviso.indexOf('ATENÇÃO')>=0?'erro':'ok'); })
+      .catch(function(e){ livre(b); msg('msgDet', e.message, 'erro'); });
+  };
+  $('aEmail').onclick=function(){
+    if(!confirm('Enviar o contrato e os áudios para '+o.email+'?')) return;
+    var b=this; ocupado(b,'Enviando…');
+    adm('admEnviarEmail', o.id).then(function(){ return recarregar(o.id, 'E-mail enviado para '+o.email+'.'); })
+      .catch(function(e){ livre(b); msg('msgDet', e.message, 'erro'); });
+  };
+  $('aWhats').onclick=function(){
+    var janela=window.open('about:blank','_blank');
+    var b=this; ocupado(b,'Abrindo…');
+    adm('admWhatsApp', o.id).then(function(r){ livre(b); if(janela) janela.location.href=r.whatsapp; else window.open(r.whatsapp,'_blank'); msg('msgDet','WhatsApp aberto com a mensagem pronta. Confira e clique em enviar.'); })
+      .catch(function(e){ if(janela) janela.close(); livre(b); msg('msgDet', e.message, 'erro'); });
+  };
+  if($('aReaceite')) $('aReaceite').onclick=function(){
+    var janela=window.open('about:blank','_blank');
+    var b=this; ocupado(b,'Enviando…');
+    adm('admEnviarReaceite', o.id).then(function(r){ livre(b); if(janela) janela.location.href=r.whatsapp; msg('msgDet','Link enviado por e-mail. O WhatsApp abriu com a mensagem pronta: confira e clique em enviar.'); })
+      .catch(function(e){ if(janela) janela.close(); livre(b); msg('msgDet', e.message, 'erro'); });
+  };
+  $('aExcluir').onclick=function(){
+    if(!confirm('Excluir DEFINITIVAMENTE o contrato de '+o.nome+'?\n\nApaga o contrato do sistema, a assinatura e o PDF (vão para a lixeira do Drive). A planilha de matrículas NÃO é alterada.')) return;
+    var b=this; ocupado(b,'Excluindo…');
+    adm('admExcluir', o.id).then(function(){ ATUAL=null; $('detalhe').innerHTML='<div class="vazio">Contrato excluído do sistema. A linha na planilha de matrículas continua lá.</div>'; carregarLista(); })
+      .catch(function(e){ livre(b); msg('msgDet', e.message, 'erro'); });
+  };
+}
+document.addEventListener('click', function(ev){
+  var b = ev.target.closest('[data-copiar]');
+  if(b){
+    var v=b.getAttribute('data-copiar'); var ok=function(){ var t=b.textContent; b.textContent='copiado ✓'; setTimeout(function(){ b.textContent=t; },1200); };
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(v).then(ok, function(){ prompt('Copie:', v); }); } else { prompt('Copie:', v); }
+    return;
+  }
+  var m = ev.target.closest('[data-marcar]');
+  if(m && ATUAL){
+    var qual=m.getAttribute('data-marcar'); var sel=document.querySelector('select[data-qual="'+qual+'"]');
+    if(!sel.value){ msg('msgDet','Escolha o resultado da consulta antes de salvar.','erro'); return; }
+    m.disabled=true; m.textContent='Salvando…';
+    adm('admMarcarCpf', ATUAL.obj.id, qual, sel.value).then(function(){
+      return recarregar(ATUAL.obj.id, sel.value==='Regular' ? 'CPF marcado como Regular.' : 'Situação registrada: '+sel.value+'. O contrato não pode ser aprovado enquanto não estiver Regular.', sel.value==='Regular'?'ok':'erro');
+    }).catch(function(e){ m.disabled=false; m.textContent='Salvar resultado'; msg('msgDet', e.message, 'erro'); });
+  }
+});
+function camposAtuais(o){
+  var c={}; CAMPOS_FORM.cadastro.concat(CAMPOS_FORM.contrato).forEach(function(x){ c[x[0]]=o[x[0]]||''; }); c.texto=o.texto||'';
+  var ord={}; document.querySelectorAll('#detalhe [data-k]').forEach(function(el){ ord[el.dataset.k]=c[el.dataset.k]; }); return ord;
+}
+
+/* ======================= MODELOS ======================= */
+var EXEMPLO = {
+  tipo:'PF', nome:'NOME DO ALUNO', nacionalidade:'Brasileira', cpf:'000.000.000-00', nascimento:'01/01/1990',
+  email:'aluno@email.com', whatsapp:'(00) 00000-0000', cep:'00000-000', endereco:'Rua Exemplo, 100', bairro:'Centro', cidade:'Cidade', uf:'UF',
+  alunoNome:'NOME DO ALUNO MENOR', alunoCpf:'000.000.000-00', alunoNascimento:'01/01/2012',
+  pjRazao:'EMPRESA EXEMPLO LTDA', pjCnpj:'00.000.000/0000-00', pjRepNome:'NOME DO REPRESENTANTE', pjRepCpf:'000.000.000-00',
+  descricao:'4 (quatro) módulos de aulas, que correspondem a 2 (duas) aulas por semana', valorParcela:'105,00', parcelas:'20', validade:'20',
+  diaVencimento:'10', formaPagamento:'PIX', planoNome:'Turma – Sem compromisso', primeiroPagamento:'10/11/2026'
+};
+function carregarModelos(manter){
+  adm('admModelos').then(function(l){
+    MODELOS=l;
+    var atual = manter || $('selModelo').value || (l[0]&&l[0].id);
+    $('selModelo').innerHTML = l.map(function(m){ return '<option value="'+esc_(m.id)+'">'+esc_(m.nome)+'</option>'; }).join('');
+    $('selModelo').value = atual;
+    mostrarModelo();
+  }).catch(function(e){ msg('msgModelo', e.message, 'erro'); });
+}
+function modeloSel(){ var id=$('selModelo').value; return MODELOS.filter(function(m){ return m.id===id; })[0]; }
+function mostrarModelo(){
+  var m=modeloSel(); if(!m) return;
+  $('txtModelo').value = m.texto;
+  $('infoModelo').textContent = 'Versão atual: v'+m.versao+' · atualizado em '+m.atualizado;
+  $('cardPrevModelo').classList.add('oculto');
+  $('histModelo').innerHTML = m.historico.length ? m.historico.map(function(h){
+    return '<div style="margin-bottom:6px">v'+h.versao+' · substituída em '+esc_(h.data)+' · '+esc_(h.por)+
+      ' <button class="b2" style="padding:3px 8px" data-v="'+h.versao+'">Carregar este texto no editor</button></div>';
+  }).join('') : 'Nenhuma versão anterior ainda.';
+  document.querySelectorAll('#histModelo button').forEach(function(b){
+    b.onclick=function(){ adm('admTextoVersao', m.id, b.dataset.v).then(function(t){ $('txtModelo').value=t; msg('msgModelo','Texto da v'+b.dataset.v+' carregado no editor. Clique em "Salvar nova versão" para voltar a usá-lo.','info'); window.scrollTo(0,0); }); };
+  });
+}
+$('selModelo').addEventListener('change', mostrarModelo);
+$('btnPrevModelo').addEventListener('click', function(){
+  var m=modeloSel(); var d=montarDados(Object.assign({}, EXEMPLO, {tipo:m.id==='RECIBO'?'PF':m.id}), INICIO?INICIO.cfg:{});
+  $('prevModelo').innerHTML = renderContrato($('txtModelo').value, d, {}) + assinaturasHtml(d, INICIO?INICIO.cfg:{}, '', {recibo:m.id==='RECIBO', id:'CT-EXEMPLO'});
+  $('cardPrevModelo').classList.remove('oculto');
+});
+$('btnImportar').addEventListener('click', function(){
+  var f=$('arqModelo').files[0];
+  if(!f){ msg('msgModelo','Escolha um arquivo .docx, .doc ou .pdf.','erro'); return; }
+  if(f.size>15*1024*1024){ msg('msgModelo','Arquivo muito grande (máximo 15 MB).','erro'); return; }
+  var b=this; b.disabled=true; b.textContent='Lendo arquivo…';
+  var rd=new FileReader();
+  rd.onload=function(){
+    adm('admImportarArquivo', f.name, rd.result).then(function(t){
+      b.disabled=false; b.textContent='Ler arquivo e colocar no editor';
+      $('txtModelo').value=t;
+      msg('msgModelo','Arquivo lido e colocado no editor (ainda NÃO salvo). Agora troque os dados de exemplo (nome, CPF, endereço, valores…) pelos campos usando "Inserir campo", confira e clique em "Salvar nova versão". O bloco de assinaturas é gerado automaticamente pelo sistema.','info');
+      window.scrollTo(0,0);
+    }).catch(function(e){ b.disabled=false; b.textContent='Ler arquivo e colocar no editor'; msg('msgModelo', e.message, 'erro'); });
+  };
+  rd.readAsDataURL(f);
+});
+$('btnInserirCampo').addEventListener('click', function(){
+  var c=$('selCampo').value; if(!c) return;
+  var ta=$('txtModelo'), ini=ta.selectionStart, fim=ta.selectionEnd, ins='{{'+c+'}}';
+  ta.value=ta.value.slice(0,ini)+ins+ta.value.slice(fim);
+  ta.focus(); ta.selectionStart=ta.selectionEnd=ini+ins.length;
+});
+$('btnSalvarModelo').addEventListener('click', function(){
+  var m=modeloSel();
+  if($('txtModelo').value.indexOf('{{')<0 && !confirm('Este texto não tem nenhum campo como {{nome}} ou {{cpf}}. Todos os contratos vão sair com os mesmos dados fixos. Salvar mesmo assim?')) return;
+  if(!confirm('Salvar uma nova versão do modelo "'+m.nome+'"?\nContratos novos passam a usar este texto.')) return;
+  var b=this; b.disabled=true;
+  adm('admSalvarModelo', m.id, $('txtModelo').value, $('motivoModelo').value.trim()).then(function(r){
+    b.disabled=false; $('motivoModelo').value=''; msg('msgModelo', r.aviso, 'ok'); carregarModelos(m.id);
+  }).catch(function(e){ b.disabled=false; msg('msgModelo', e.message, 'erro'); });
+});
+
+/* ======================= AJUDA ======================= */
+var LISTA_CAMPOS = [
+  ['nome','Nome do contratante (ou razão social, se PJ)'],['nacionalidade','Nacionalidade'],['cpf','CPF do contratante'],
+  ['nascimento','Data de nascimento do contratante'],['endereco_completo','Endereço completo (rua, bairro, CEP, cidade - UF)'],
+  ['email','E-mail'],['whatsapp','WhatsApp'],
+  ['alunoNome','Nome do aluno (menor ou funcionário da empresa)'],['alunoCpf','CPF do aluno'],['alunoNascimento','Nascimento do aluno'],
+  ['planoNome','Nome do plano'],['documento_contratante','CPF ou CNPJ do contratante (usado no recibo)'],['aluno_ficha','Nome do aluno (usado no recibo)'],['primeiroPagamento','Data do primeiro pagamento'],['pjRazao','Razão social'],['pjCnpj','CNPJ'],['pjRepNome','Representante legal'],['pjRepCpf','CPF do representante'],['pjRepNascimento','Nasc. do representante'],
+  ['descricao','Descrição do plano'],['valorParcela','Valor da parcela'],['parcelas','Quantidade de parcelas'],['validade','Validade em meses'],
+  ['primeiroPagamento','1º pagamento (dd/mm/aaaa)'],['diaVencimento','Dia de vencimento'],['formaPagamento','Forma de pagamento'],['data_extenso','Data do contrato por extenso'],
+  ['empresa_nome','Nome fantasia da escola'],['empresa_razao','Razão social da escola'],['empresa_cnpj','CNPJ da escola'],['empresa_endereco','Endereço da escola']
+];
+$('selCampo').innerHTML = '<option value="">Escolha um campo para inserir…</option>' + LISTA_CAMPOS.map(function(c){ return '<option value="'+c[0]+'">'+esc_(c[1])+' → {{'+c[0]+'}}</option>'; }).join('');
+$('tabCampos').innerHTML = LISTA_CAMPOS.map(function(c){ return '<tr><td><code>{{'+c[0]+'}}</code></td><td>'+c[1]+'</td></tr>'; }).join('');
+
+function desenharLinks(){
+  var base = INICIO && INICIO.linkAluno;
+  if(!base){ $('linksAluno').innerHTML='A página do aluno ainda não foi publicada. Siga o passo a passo (Implantar &gt; Nova implantação &gt; App da Web) e cole o link em <b>Configurações &gt; link_pagina_aluno</b> (planilha do sistema).'; return; }
+  var sep = base.indexOf('?')>=0?'&':'?';
+  var linhas = '<p style="margin-top:0">Link geral para o aluno: <a href="'+esc_(base)+'">'+esc_(base)+'</a></p>'+
+    (INICIO.linkPainel ? '<p>Link deste painel (salve nos favoritos): <a href="'+esc_(INICIO.linkPainel)+'">'+esc_(INICIO.linkPainel)+'</a></p>' : '')+
+    (INICIO.planilhaSistema ? '<p>Planilha do sistema (planos, configurações, contratos): <a href="'+esc_(INICIO.planilhaSistema)+'">abrir</a></p>' : '')+
+    '<p>Links prontos, já com o plano e o tipo marcados (copie e mande para o aluno):</p><table class="campos">';
+  (INICIO.planos||[]).filter(function(p){ return p.ativo; }).forEach(function(p){
+    ['PF','MENOR','PJ'].forEach(function(t){
+      var u = base+sep+'plano='+encodeURIComponent(p.id)+'&tipo='+t;
+      linhas += '<tr><td>'+esc_(p.nome)+' – '+({PF:'aluno',MENOR:'menor',PJ:'empresa'})[t]+'</td><td><input value="'+esc_(u)+'" readonly onclick="this.select()"></td></tr>';
+    });
+  });
+  $('linksAluno').innerHTML = linhas+'</table>';
+}
+
+/* ---------- início ---------- */
+function iniciar(){
+  adm('admInicio').then(function(r){ INICIO=r; $('login').classList.add('oculto'); desenharLinks(); carregarLista(); })
+    .catch(function(e){ mostrarLogin(e.message.indexOf('sessão')>=0 ? '' : e.message); });
+}
+$('formLogin').addEventListener('submit', function(ev){
+  ev.preventDefault();
+  var b=$('btnLogin'); b.disabled=true; b.textContent='Entrando…';
+  run('admLogin', $('senha').value).then(function(tk){
+    TOKEN=tk; try { sessionStorage.setItem('tk_contratos', tk); } catch(e) {}
+    $('senha').value=''; b.disabled=false; b.textContent='Entrar'; $('msgLogin').className='msg'; iniciar();
+  }).catch(function(e){ b.disabled=false; b.textContent='Entrar'; msg('msgLogin', e.message, 'erro'); });
+});
+if(TOKEN){ iniciar(); }
+else {
+  if(!window.API_URL) run('admSouDono').then(function(d){ if(d) $('senha').placeholder='Você é o dono: clique em Entrar'; }).catch(function(){});
+}
+</script>
 </body>
 </html>
