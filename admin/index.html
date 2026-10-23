@@ -326,10 +326,22 @@ document.getElementById('cssContrato').textContent = CSS_CONTRATO;
 function run(fn){
   var args = Array.prototype.slice.call(arguments, 1);
   if (window.API_URL) {
-    // Painel público (GitHub): conversa com o Apps Script pela API
-    return fetch(window.API_URL, { method: 'POST', body: JSON.stringify({ fn: fn, args: args }), redirect: 'follow' })
-      .then(function(r){ if(!r.ok) throw new Error('Falha de conexão ('+r.status+'). Tente de novo.'); return r.json(); })
-      .then(function(j){ if(!j.ok) throw new Error(j.erro || 'Erro.'); return j.r; }, function(e){ throw new Error(e && e.message && e.message.indexOf('conex')>=0 ? e.message : 'Sem conexão com o servidor. Verifique a internet e tente de novo.'); });
+    // Painel público (GitHub): conversa com o Apps Script pela API.
+    // Funções seguras de repetir tentam de novo sozinhas se a conexão cair.
+    var SEGURAS = ['admLogin','admInicio','admListar','admObter','admPreview','admSalvar','admMarcarCpf','admModelos','admTextoVersao','admCopiarMes'];
+    var tentar = function(n){
+      return fetch(window.API_URL, { method: 'POST', body: JSON.stringify({ fn: fn, args: args }), redirect: 'follow' })
+        .then(function(r){ if(!r.ok) throw { rede: true, msg: 'Falha de conexão (código '+r.status+').' }; return r.json().catch(function(){ throw { rede: true, msg: 'Resposta inválida do servidor.' }; }); }, function(e){ throw { rede: true, msg: (e && e.message) || 'sem resposta' }; })
+        .then(function(j){ if(!j.ok) throw new Error(j.erro || 'Erro.'); return j.r; })
+        .catch(function(e){
+          if(e && e.rede){
+            if(n < 2 && SEGURAS.indexOf(fn) >= 0) return new Promise(function(ok){ setTimeout(ok, 1500*(n+1)); }).then(function(){ return tentar(n+1); });
+            throw new Error('Sem conexão com o servidor. Tente de novo em alguns segundos. (detalhe técnico: '+e.msg+')');
+          }
+          throw e;
+        });
+    };
+    return tentar(0);
   }
   return new Promise(function(ok, falha){
     var r = google.script.run.withSuccessHandler(ok).withFailureHandler(function(e){ falha(e && e.message ? e : new Error(String(e))); });
