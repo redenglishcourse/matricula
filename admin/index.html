@@ -492,8 +492,15 @@ function desenharDetalhe(aviso, tipoAviso){
   if(aviso) msg('msgDet', aviso, tipoAviso||'ok');
 
   function coletar(){ var c={}; document.querySelectorAll('#detalhe [data-k]').forEach(function(el){ c[el.dataset.k]=el.value; }); return c; }
-  function ocupado(b, t){ b.disabled=true; b.dataset.t=b.textContent; b.textContent=t||'Aguarde…'; }
-  function livre(b){ b.disabled=false; if(b.dataset.t) b.textContent=b.dataset.t; }
+  // Uma ação por vez: enquanto uma roda, os outros botões ficam bloqueados
+  function ocupado(b, t){
+    document.querySelectorAll('#detalhe button').forEach(function(x){ if(!x.disabled){ x.disabled=true; x.dataset.trava='1'; } });
+    b.dataset.t=b.textContent; b.textContent=t||'Aguarde…';
+  }
+  function livre(b){
+    document.querySelectorAll('#detalhe button[data-trava]').forEach(function(x){ x.disabled=false; x.removeAttribute('data-trava'); });
+    if(b.dataset.t) b.textContent=b.dataset.t;
+  }
 
   $('aSalvar').onclick=function(){
     var b=this; ocupado(b,'Salvando…');
@@ -518,22 +525,42 @@ function desenharDetalhe(aviso, tipoAviso){
       .catch(function(e){ livre(b); msg('msgDet', e.message, 'erro'); });
   };
   $('aEmail').onclick=function(){
-    if(!confirm('Enviar o contrato e os áudios para '+o.email+'?')) return;
-    var b=this; ocupado(b,'Enviando…');
-    adm('admEnviarEmail', o.id).then(function(){ return recarregar(o.id, 'E-mail enviado para '+o.email+'.'); })
-      .catch(function(e){ livre(b); msg('msgDet', e.message, 'erro'); });
+    var doc = ATUAL.ehRecibo ? 'o recibo' : 'o contrato';
+    if(!confirm('Enviar '+doc+' para '+o.email+'?')) return;
+    var b=this, antes=o.emailEnviadoEm||''; ocupado(b,'Enviando…');
+    adm('admEnviarEmail', o.id).then(function(){ return recarregar(o.id, '✓ E-mail enviado com sucesso para '+o.email+'.'); })
+      .catch(function(e){
+        // A resposta pode ter se perdido mesmo com o e-mail enviado: confere no sistema
+        msg('msgDet','Conferindo se o e-mail foi enviado…','info');
+        adm('admObter', o.id).then(function(r){
+          if((r.obj.emailEnviadoEm||'') !== antes){ ATUAL=r; desenharDetalhe('✓ E-mail enviado com sucesso para '+o.email+'.'); carregarLista(); }
+          else { livre(b); msg('msgDet', e.message, 'erro'); }
+        }).catch(function(){ livre(b); msg('msgDet', e.message, 'erro'); });
+      });
   };
   $('aWhats').onclick=function(){
-    var janela=window.open('about:blank','_blank');
-    var b=this; ocupado(b,'Abrindo…');
-    adm('admWhatsApp', o.id).then(function(r){ livre(b); if(janela) janela.location.href=r.whatsapp; else window.open(r.whatsapp,'_blank'); msg('msgDet','WhatsApp aberto com a mensagem pronta. Confira e clique em enviar.'); })
-      .catch(function(e){ if(janela) janela.close(); livre(b); msg('msgDet', e.message, 'erro'); });
+    // Abre na hora, sem esperar o servidor
+    var empresa=(INICIO&&INICIO.cfg&&INICIO.cfg.empresa_nome)||'R.E.D. English Course';
+    var texto='Olá, '+primeiroNome(o)+'! Aqui é da '+empresa+' 😊\n'+
+      (ATUAL.ehRecibo?'Seu pagamento foi confirmado e o recibo está pronto.':'Seu contrato foi aprovado.')+' Você pode abrir aqui: '+o.pdfUrl+'\n'+
+      'Também enviamos uma cópia para o seu e-mail ('+o.email+').';
+    window.open(linkWhats(o.whatsapp, texto),'_blank');
+    msg('msgDet','✓ WhatsApp aberto com a mensagem pronta. Confira e clique em enviar lá no WhatsApp.');
+    adm('admWhatsApp', o.id).catch(function(){}); // só libera o PDF e registra no histórico
   };
   if($('aReaceite')) $('aReaceite').onclick=function(){
-    var janela=window.open('about:blank','_blank');
-    var b=this; ocupado(b,'Enviando…');
-    adm('admEnviarReaceite', o.id).then(function(r){ livre(b); if(janela) janela.location.href=r.whatsapp; msg('msgDet','Link enviado por e-mail. O WhatsApp abriu com a mensagem pronta: confira e clique em enviar.'); })
-      .catch(function(e){ if(janela) janela.close(); livre(b); msg('msgDet', e.message, 'erro'); });
+    var base=(INICIO&&INICIO.linkAluno)||'';
+    var empresa=(INICIO&&INICIO.cfg&&INICIO.cfg.empresa_nome)||'R.E.D. English Course';
+    if(base && o.token){
+      var link=base+(base.indexOf('?')>=0?'&':'?')+'aceite='+encodeURIComponent(o.id)+'&t='+o.token;
+      window.open(linkWhats(o.whatsapp,'Olá, '+primeiroNome(o)+'! Aqui é da '+empresa+'. Atualizamos o seu contrato conforme combinado. Para concluir, leia e assine a nova versão neste link: '+link),'_blank');
+    }
+    var b=this, antes=(o.historico||'').length; ocupado(b,'Enviando e-mail…');
+    var ok=function(){ return recarregar(o.id,'✓ Link de novo aceite enviado por e-mail. O WhatsApp abriu com a mensagem pronta: confira e clique em enviar.'); };
+    adm('admEnviarReaceite', o.id).then(ok).catch(function(e){
+      adm('admObter', o.id).then(function(r){ if((r.obj.historico||'').length>antes) ok(); else { livre(b); msg('msgDet', e.message, 'erro'); } })
+        .catch(function(){ livre(b); msg('msgDet', e.message, 'erro'); });
+    });
   };
   $('aExcluir').onclick=function(){
     if(!confirm('Excluir DEFINITIVAMENTE o contrato de '+o.nome+'?\n\nApaga o contrato do sistema, a assinatura e o PDF (vão para a lixeira do Drive). A planilha de matrículas NÃO é alterada.')) return;
@@ -559,6 +586,14 @@ document.addEventListener('click', function(ev){
     }).catch(function(e){ m.disabled=false; m.textContent='Salvar resultado'; msg('msgDet', e.message, 'erro'); });
   }
 });
+function primeiroNome(o){
+  var n=String((o.tipo==='PJ'?(o.pjRepNome||o.nome):o.nome)||'').trim().split(' ')[0]||'';
+  return n.charAt(0).toUpperCase()+n.slice(1).toLowerCase();
+}
+function linkWhats(numero, texto){
+  var d=String(numero||'').replace(/\D/g,''); if(d.length===10||d.length===11) d='55'+d;
+  return 'https://wa.me/'+d+'?text='+encodeURIComponent(texto);
+}
 function camposAtuais(o){
   var c={}; CAMPOS_FORM.cadastro.concat(CAMPOS_FORM.contrato).forEach(function(x){ c[x[0]]=o[x[0]]||''; }); c.texto=o.texto||'';
   var ord={}; document.querySelectorAll('#detalhe [data-k]').forEach(function(el){ ord[el.dataset.k]=c[el.dataset.k]; }); return ord;
