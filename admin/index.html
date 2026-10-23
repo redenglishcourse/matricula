@@ -56,6 +56,13 @@
   table.campos{border-collapse:collapse;width:100%;font-size:13px}
   table.campos td{border-bottom:1px solid #eef0f4;padding:5px 6px;vertical-align:top}
   .oculto{display:none!important}
+  .modal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:20;overflow:auto}
+  .modal-caixa{background:#fff;border-radius:12px;padding:16px;width:100%;max-width:720px}
+  .trilha{font-size:13px;margin-bottom:6px}
+  .pastas{border:1px solid var(--borda);border-radius:8px;max-height:360px;overflow:auto}
+  .pasta-item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #eef0f4}
+  .pasta-item a{text-decoration:none;color:#1b1f2a;font-weight:600}
+  .pasta-item:hover{background:#f8fafc}
   .busca{display:flex;align-items:center;gap:6px;background:#f8fafc;border:1px solid var(--borda);border-radius:8px;padding:6px 8px;margin-bottom:6px}
   .busca .b-termo{flex:1;border:0;background:transparent;padding:6px}
   .busca .b-termo:focus{outline:none}
@@ -91,6 +98,7 @@
 <div class="abas">
   <button class="aba ativa" data-tela="tContratos">Contratos</button>
   <button class="aba" data-tela="tModelos">Atualizar modelos</button>
+  <button class="aba" data-tela="tPastas">Pastas</button>
   <button class="aba" data-tela="tAjuda">Links e ajuda</button>
 </div>
 
@@ -147,6 +155,26 @@
 </div>
 
 <!-- ======================= AJUDA ======================= -->
+<!-- ======================= PASTAS ======================= -->
+<div class="tela" id="tPastas">
+  <div class="detalhe">
+    <div class="msg" id="msgPastas"></div>
+    <div class="card">
+      <h3>Pastas do Drive</h3>
+      <p class="ajuda" style="margin-top:0">Aqui você navega, cria, renomeia e exclui pastas dentro das pastas de <b>Contratos</b> e de <b>Recibos</b>. Por segurança, só pastas vazias podem ser excluídas (vão para a lixeira do Drive).</p>
+      <div id="navPastas"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Janela para escolher a pasta da cópia -->
+<div id="modalPasta" class="modal oculto">
+  <div class="modal-caixa">
+    <div class="barra" style="justify-content:space-between;margin-bottom:8px"><b>Escolha a pasta onde salvar a cópia</b><button class="b2 mini" id="fecharModal">Fechar</button></div>
+    <div id="navModal"></div>
+  </div>
+</div>
+
 <div class="tela" id="tAjuda">
   <div class="detalhe">
     <div class="card">
@@ -337,7 +365,7 @@ function run(fn){
   if (window.API_URL) {
     // Painel público (GitHub): conversa com o Apps Script pela API.
     // Funções seguras de repetir tentam de novo sozinhas se a conexão cair.
-    var SEGURAS = ['admLogin','admInicio','admListar','admObter','admPreview','admSalvar','admMarcarCpf','admModelos','admTextoVersao','admCopiarMes'];
+    var SEGURAS = ['admLogin','admInicio','admListar','admObter','admPreview','admSalvar','admMarcarCpf','admModelos','admTextoVersao','admCopiarMes','admPastas','admRenomearPasta','admCopiarPara'];
     var tentar = function(n){
       return fetch(window.API_URL, { method: 'POST', body: JSON.stringify({ fn: fn, args: args }), redirect: 'follow' })
         .then(function(r){ if(!r.ok) throw { rede: true, msg: 'Falha de conexão (código '+r.status+').' }; return r.json().catch(function(){ throw { rede: true, msg: 'Resposta inválida do servidor.' }; }); }, function(e){ throw { rede: true, msg: (e && e.message) || 'sem resposta' }; })
@@ -376,6 +404,7 @@ document.querySelectorAll('.aba').forEach(function(b){
     document.querySelectorAll('.tela').forEach(function(x){ x.classList.remove('ativa'); });
     b.classList.add('ativa'); $(b.dataset.tela).classList.add('ativa');
     if(b.dataset.tela==='tModelos' && !MODELOS) carregarModelos();
+    if(b.dataset.tela==='tPastas' && !NAV_PASTAS) NAV_PASTAS=montarNavegador($('navPastas'), null, 'msgPastas');
   });
 });
 
@@ -477,14 +506,15 @@ function desenharDetalhe(aviso, tipoAviso){
       '<button class="bx" id="aExcluir">Excluir</button>'+
     '</div></div>'+
     '<div class="msg" id="msgDet"></div>'+
-    (o.negociar ? '<div class="alerta"><b>O aluno quer negociar:</b> '+esc_(o.negociar)+'</div>' : '')+
+    (o.negociar ? '<div class="alerta"><b>O aluno quer negociar:</b> <span id="txtNeg">'+esc_(o.negociar)+'</span>'+
+      '<div class="barra" style="margin-top:8px"><button class="b3 mini" id="negConcluir">✓ Negociação concluída</button><button class="b2 mini" id="negEditar">Editar</button><button class="bx mini" id="negRemover">Remover</button></div></div>' : '')+
     (reaceite ? '<div class="alerta">O contrato foi alterado e o aluno precisa assinar a nova versão.<div class="barra" style="margin-top:8px">'+
       '<button class="b1" id="aReaceite">Enviar link de novo aceite (e-mail + WhatsApp)</button></div></div>' : '')+
     (ATUAL.ehRecibo ? '<div class="card'+(o.pdfId?'':' card-alerta')+'"><h3>Comprovante do PIX</h3>'+
       (o.pagamentoUrl ? '<a class="b2 mini lk" href="'+esc_(o.pagamentoUrl)+'">Abrir comprovante enviado pelo aluno ↗</a>' : '<span class="ajuda">Nenhum comprovante anexado.</span>')+
       '<p class="ajuda" style="margin-bottom:0">Confira no extrato da conta se o PIX de <b>R$ '+esc_(o.valorParcela)+'</b> realmente entrou antes de confirmar. Data informada pelo aluno: <b>'+esc_(o.primeiroPagamento)+'</b>.</p></div>' : '')+
     receitaHtml()+
-    (temPdf ? '<div class="card"><h3>PDF</h3><a href="'+esc_(o.pdfUrl)+'">Abrir PDF no Drive</a>'+(o.pdfMesPasta?' · cópia na pasta <b>'+esc_(o.pdfMesPasta)+'</b>':' · <span style="color:#991b1b">sem cópia '+(ATUAL.ehRecibo?'na pasta dos recibos':'na pasta do mês')+'</span> <button class="b2 mini" id="aCopiarMes">'+(ATUAL.ehRecibo?'Salvar cópia na pasta dos recibos':'Salvar cópia na pasta do mês')+'</button>')+(o.emailEnviadoEm?' · e-mail enviado em '+esc_(o.emailEnviadoEm):'')+'</div>' : '')+
+    (temPdf ? '<div class="card"><h3>PDF</h3><a href="'+esc_(o.pdfUrl)+'">Abrir PDF no Drive</a>'+(o.pdfMesPasta?' · cópia na pasta <b>'+esc_(o.pdfMesPasta)+'</b>':' · <span style="color:#991b1b">sem cópia '+(ATUAL.ehRecibo?'na pasta dos recibos':'na pasta do mês')+'</span> <button class="b2 mini" id="aCopiarMes">'+(ATUAL.ehRecibo?'Salvar cópia na pasta dos recibos':'Salvar cópia na pasta do mês')+'</button>')+' <button class="b2 mini" id="aOutraPasta">Salvar cópia em outra pasta…</button>'+(o.emailEnviadoEm?' · e-mail enviado em '+esc_(o.emailEnviadoEm):'')+'</div>' : '')+
     '<div class="card"><h3>Dados de cadastro</h3><p class="ajuda" style="margin-top:0">Correções aqui não exigem nova assinatura. A planilha de matrículas não é alterada: se precisar, corrija lá manualmente.</p><div class="grade">'+camposHtml(CAMPOS_FORM.cadastro,o)+'</div></div>'+
     '<div class="card"><h3>Plano e pagamento</h3><p class="ajuda" style="margin-top:0">'+(ATUAL.ehRecibo?'Ajustes aqui entram no recibo (não exigem nova assinatura).':'Mudar qualquer item daqui altera o contrato: o aluno terá de assinar de novo.')+'</p><div class="grade">'+camposHtml(CAMPOS_FORM.contrato,o)+'</div></div>'+
     '<div class="card"><h3>'+(ATUAL.ehRecibo?'Texto deste recibo':'Texto deste contrato')+'</h3><p class="ajuda" style="margin-top:0">'+(ATUAL.ehRecibo?'Ajuste só se precisar mudar algo neste recibo.':'Use para negociar cláusulas só deste aluno. Ao salvar, o aluno recebe a nova versão para assinar.')+'</p>'+
@@ -517,6 +547,25 @@ function desenharDetalhe(aviso, tipoAviso){
     adm('admSalvar', o.id, coletar()).then(function(r){ return recarregar(o.id, r.aviso, r.obj.status==='Aguardando novo aceite'?'info':'ok'); })
       .catch(function(e){ livre(b); msg('msgDet', e.message, 'erro'); });
   };
+  if($('aOutraPasta')) $('aOutraPasta').onclick=function(){
+    abrirModalPasta(function(pastaId, nomePasta){
+      msg('msgDet','Salvando cópia em "'+nomePasta+'"…','info');
+      adm('admCopiarPara', o.id, pastaId).then(function(r){ return recarregar(o.id, '✓ '+r.aviso); }).catch(function(e){ msg('msgDet', e.message, 'erro'); });
+    });
+  };
+  function negAcao(acao, texto){
+    adm('admNegociacao', o.id, acao, texto||'').then(function(r){ return recarregar(o.id, '✓ '+r.aviso); }).catch(function(e){ msg('msgDet', e.message, 'erro'); });
+  }
+  if($('negConcluir')) $('negConcluir').onclick=function(){
+    var res=prompt('Negociação concluída. Quer anotar o resultado? (opcional)\nEx.: multa reduzida para 15%');
+    if(res===null) return; negAcao('concluir', res);
+  };
+  if($('negEditar')) $('negEditar').onclick=function(){
+    var t=prompt('Editar o pedido de negociação:', o.negociar); if(t===null) return;
+    if(!t.trim()){ if(confirm('Texto vazio. Remover o pedido de negociação?')) negAcao('remover'); return; }
+    negAcao('editar', t);
+  };
+  if($('negRemover')) $('negRemover').onclick=function(){ if(confirm('Remover o pedido de negociação deste aluno? (fica registrado no histórico)')) negAcao('remover'); };
   if($('aCopiarMes')) $('aCopiarMes').onclick=function(){
     var b=this; ocupado(b,'Salvando…');
     adm('admCopiarMes', o.id).then(function(r){ return recarregar(o.id, r.aviso, r.aviso.indexOf('ATENÇÃO')>=0?'erro':'ok'); })
@@ -664,6 +713,55 @@ function criarBusca(caixa, ta){
   caixa.querySelector('.b-ant').onclick=function(){ if(!achados.length) procurar(); ir(atual-1); };
   ta.addEventListener('input', function(){ if(inp.value.trim()){ clearTimeout(t); t=setTimeout(procurar,300); } });
 }
+
+/* ---------- Navegador de pastas (aba Pastas e janela de escolha) ---------- */
+var NAV_PASTAS=null;
+function montarNavegador(caixa, aoEscolher, idMsg){
+  var estado={ id: null };
+  function avisar(t, tipo){ if(idMsg) msg(idMsg, t, tipo); }
+  function carregar(id){
+    caixa.innerHTML='<div class="ajuda">Carregando pastas…</div>';
+    adm('admPastas', id||null).then(desenhar).catch(function(e){ caixa.innerHTML='<div class="msg erro" style="display:block">'+esc_(e.message)+'</div>'; });
+  }
+  function desenhar(p){
+    estado.id=p.id;
+    var raizes=p.raizes.map(function(r){ return '<button class="b2 mini" data-ir="'+r.id+'">'+(r.nome==='Contratos'?'📁 ':'🧾 ')+esc_(r.nome)+'</button>'; }).join('');
+    var trilha=p.caminho.map(function(c,i){ return i===p.caminho.length-1 ? '<b>'+esc_(c.nome)+'</b>' : '<a href="#" data-ir="'+c.id+'">'+esc_(c.nome)+'</a>'; }).join(' › ');
+    var linhas=p.subpastas.length ? p.subpastas.map(function(s){
+      return '<div class="pasta-item"><a href="#" data-ir="'+s.id+'">📁 '+esc_(s.nome)+'</a>'+
+        '<span class="barra">'+(aoEscolher?'<button class="b3 mini" data-escolher="'+s.id+'" data-nome="'+esc_(s.nome)+'">Salvar aqui</button>':'')+
+        '<button class="b2 mini" data-renomear="'+s.id+'" data-nome="'+esc_(s.nome)+'">Renomear</button>'+
+        '<button class="bx mini" data-excluir="'+s.id+'" data-nome="'+esc_(s.nome)+'">Excluir</button></span></div>';
+    }).join('') : '<div class="ajuda" style="padding:8px">Nenhuma subpasta aqui.</div>';
+    caixa.innerHTML=
+      '<div class="barra" style="margin-bottom:8px">'+raizes+'</div>'+
+      '<div class="trilha">'+trilha+' <span class="ajuda">· '+p.arquivos+' arquivo(s) · <a href="'+esc_(p.url)+'" target="_blank">abrir no Drive ↗</a></span></div>'+
+      (aoEscolher?'<div style="margin:8px 0"><button class="b3" data-escolher="'+p.id+'" data-nome="'+esc_(p.nome)+'">Salvar nesta pasta ('+esc_(p.nome)+')</button></div>':'')+
+      '<div class="pastas">'+linhas+'</div>'+
+      '<div class="barra" style="margin-top:10px"><input class="nova-pasta" placeholder="Nome da nova pasta (ex.: novembro de 2026)" style="flex:1"><button class="b2" data-criar="1">+ Criar pasta aqui</button></div>';
+    caixa.querySelectorAll('[data-ir]').forEach(function(el){ el.onclick=function(ev){ ev.preventDefault(); carregar(el.dataset.ir); }; });
+    caixa.querySelectorAll('[data-escolher]').forEach(function(el){ el.onclick=function(){ aoEscolher(el.dataset.escolher, el.dataset.nome); }; });
+    caixa.querySelectorAll('[data-renomear]').forEach(function(el){ el.onclick=function(){
+      var n=prompt('Novo nome da pasta:', el.dataset.nome); if(!n||!n.trim()) return;
+      adm('admRenomearPasta', el.dataset.renomear, n).then(function(){ avisar('✓ Pasta renomeada para "'+n.trim()+'".'); carregar(estado.id); }).catch(function(e){ avisar(e.message,'erro'); alert(e.message); });
+    }; });
+    caixa.querySelectorAll('[data-excluir]').forEach(function(el){ el.onclick=function(){
+      if(!confirm('Excluir a pasta "'+el.dataset.nome+'"? Ela vai para a lixeira do Drive (só funciona se estiver vazia).')) return;
+      adm('admExcluirPasta', el.dataset.excluir).then(function(){ avisar('✓ Pasta "'+el.dataset.nome+'" excluída.'); carregar(estado.id); }).catch(function(e){ avisar(e.message,'erro'); alert(e.message); });
+    }; });
+    caixa.querySelector('[data-criar]').onclick=function(){
+      var n=caixa.querySelector('.nova-pasta').value.trim(); if(!n){ alert('Digite o nome da nova pasta.'); return; }
+      adm('admCriarPasta', estado.id, n).then(function(){ avisar('✓ Pasta "'+n+'" criada.'); carregar(estado.id); }).catch(function(e){ avisar(e.message,'erro'); alert(e.message); });
+    };
+  }
+  carregar(null);
+  return { recarregar: function(){ carregar(estado.id); } };
+}
+function abrirModalPasta(aoEscolher){
+  $('modalPasta').classList.remove('oculto');
+  montarNavegador($('navModal'), function(id, nome){ $('modalPasta').classList.add('oculto'); aoEscolher(id, nome); }, null);
+}
+$('fecharModal').onclick=function(){ $('modalPasta').classList.add('oculto'); };
 
 function camposAtuais(o){
   var c={}; CAMPOS_FORM.cadastro.concat(CAMPOS_FORM.contrato).forEach(function(x){ c[x[0]]=o[x[0]]||''; }); c.texto=o.texto||'';
