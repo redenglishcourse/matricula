@@ -210,6 +210,12 @@ function montarDados(d, cfg) {
   o.empresa_cnpj = cfg.empresa_cnpj;
   o.empresa_endereco = cfg.empresa_endereco;
   o.data_extenso = d.dataContrato || dataExtenso(new Date());
+  var vp = parseFloat(String(d.valorParcela || '').replace(/\./g, '').replace(',', '.'));
+  var np = parseInt(d.parcelas, 10);
+  o.valor_total = (vp && np) ? (vp * np).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '';
+  var ch = String(d.descricao || '').match(/certificado de (\d+)\s*horas/i);
+  var nm = String(d.planoNome || d.descricao || '').match(/(\d)\s*(?:\(\w+\)\s*)?m[óo]dulo/i);
+  o.carga_horaria = ch ? ch[1] : (nm ? String(Number(nm[1]) * 60) : '');
   o.documento_contratante = d.tipo === 'PJ' ? (d.pjCnpj || '') : (d.cpf || '');
   o.aluno_ficha = d.tipo === 'PF' ? (d.nome || '') : (d.alunoNome || '');
   return o;
@@ -231,11 +237,14 @@ function renderContrato(texto, dados, opts) {
   var emLista = false;
 
   function trocar(s) {
-    return esc_(s).replace(/\{\{\s*([a-zA-Z_0-9]+)\s*\}\}/g, function (m, chave) {
+    var s2 = esc_(s).replace(/\{\{\s*([a-zA-Z_0-9]+)\s*\}\}/g, function (m, chave) {
       var v = dados[chave];
       if (v === undefined || v === null || String(v).trim() === '') return vazio;
       return opts.pdf ? esc_(v) : '<b class="ct-campo">' + esc_(v) + '</b>';
     });
+    // **texto** = negrito (frases que a lei manda destacar)
+    s2 = s2.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+    return s2;
   }
   function rotulo(s) {
     return s.replace(/^(CLÁUSULA\s+[\d.]+ª\.?|§\s*\d+º|PARÁGRAFO\s+(?:ÚNICO|\d+º)\.?:?)/i, '<b>$1</b>');
