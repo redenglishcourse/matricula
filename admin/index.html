@@ -56,6 +56,14 @@
   table.campos{border-collapse:collapse;width:100%;font-size:13px}
   table.campos td{border-bottom:1px solid #eef0f4;padding:5px 6px;vertical-align:top}
   .oculto{display:none!important}
+  .busca{display:flex;align-items:center;gap:6px;background:#f8fafc;border:1px solid var(--borda);border-radius:8px;padding:6px 8px;margin-bottom:6px}
+  .busca .b-termo{flex:1;border:0;background:transparent;padding:6px}
+  .busca .b-termo:focus{outline:none}
+  .b-cont{font-size:12px;color:var(--suave);white-space:nowrap}.b-nada{color:#991b1b}
+  .b-lista{max-height:180px;overflow:auto;border:1px solid var(--borda);border-radius:8px;margin-bottom:8px;background:#fff}
+  .b-item{padding:6px 10px;border-bottom:1px solid #eef0f4;font-size:12.5px;cursor:pointer;line-height:1.4}
+  .b-item:hover{background:#f8fafc}.b-item.b-sel{background:#fef9c3}
+  .b-item mark{background:#fde047;padding:0 1px;border-radius:2px}
   .importar{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px;margin-bottom:6px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
   .importar input[type=file]{width:auto;background:#fff}
   .rec{border:1px solid #eef0f4;border-radius:8px;padding:10px;margin-bottom:8px;background:#fafbfc}
@@ -125,6 +133,7 @@
         <select id="selCampo" style="max-width:360px"></select>
         <button class="b2" id="btnInserirCampo">Inserir campo onde está o cursor</button>
       </div>
+      <div id="buscaModelo"></div>
       <textarea id="txtModelo" class="texto" style="min-height:440px"></textarea>
       <div class="barra" style="margin-top:8px">
         <input id="motivoModelo" placeholder="Motivo da alteração (ex.: ajuste da multa aprovado pela empresa)" style="flex:1">
@@ -155,7 +164,7 @@
         <code># Título</code> título centralizado ·
         <code>## Seção</code> subtítulo ·
         <code>- item</code> lista ·
-        linhas que começam com <code>CLÁUSULA 1ª</code>, <code>§1º</code> ou <code>PARÁGRAFO ÚNICO</code> ficam com o rótulo em negrito.
+        linhas que começam com <code>CLÁUSULA 1ª</code>, <code>§1º</code> ou <code>PARÁGRAFO ÚNICO</code> ficam com o rótulo em negrito. · texto entre <code>**dois asteriscos**</code> sai em negrito no contrato (usado nas frases que a lei manda destacar).
       </div>
     </div>
     <div class="card">
@@ -479,7 +488,8 @@ function desenharDetalhe(aviso, tipoAviso){
     '<div class="card"><h3>Dados de cadastro</h3><p class="ajuda" style="margin-top:0">Correções aqui não exigem nova assinatura. A planilha de matrículas não é alterada: se precisar, corrija lá manualmente.</p><div class="grade">'+camposHtml(CAMPOS_FORM.cadastro,o)+'</div></div>'+
     '<div class="card"><h3>Plano e pagamento</h3><p class="ajuda" style="margin-top:0">'+(ATUAL.ehRecibo?'Ajustes aqui entram no recibo (não exigem nova assinatura).':'Mudar qualquer item daqui altera o contrato: o aluno terá de assinar de novo.')+'</p><div class="grade">'+camposHtml(CAMPOS_FORM.contrato,o)+'</div></div>'+
     '<div class="card"><h3>'+(ATUAL.ehRecibo?'Texto deste recibo':'Texto deste contrato')+'</h3><p class="ajuda" style="margin-top:0">'+(ATUAL.ehRecibo?'Ajuste só se precisar mudar algo neste recibo.':'Use para negociar cláusulas só deste aluno. Ao salvar, o aluno recebe a nova versão para assinar.')+'</p>'+
-      '<textarea class="texto" data-k="texto">'+esc_(o.texto)+'</textarea>'+
+      '<div id="buscaDet"></div>'+
+      '<textarea class="texto" data-k="texto" id="txtDet">'+esc_(o.texto)+'</textarea>'+
       '<div class="barra" style="margin-top:8px"><button class="b2" id="aPrev">Pré-visualizar como fica</button></div>'+
       '<div class="prev oculto" id="prevDet" style="margin-top:10px"></div></div>'+
     '<div class="card assin"><h3>'+(ATUAL.ehRecibo?'Registro do envio':'Assinatura e provas')+'</h3>'+(ATUAL.assinatura?'<img src="'+ATUAL.assinatura+'">':(ATUAL.ehRecibo?'':'<span class="ajuda">Sem assinatura.</span>'))+
@@ -512,6 +522,7 @@ function desenharDetalhe(aviso, tipoAviso){
     adm('admCopiarMes', o.id).then(function(r){ return recarregar(o.id, r.aviso, r.aviso.indexOf('ATENÇÃO')>=0?'erro':'ok'); })
       .catch(function(e){ livre(b); msg('msgDet', e.message, 'erro'); });
   };
+  criarBusca($('buscaDet'), $('txtDet'));
   $('aPrev').onclick=function(){
     var b=this; ocupado(b,'Gerando…');
     adm('admPreview', o.id, coletar()).then(function(h){ livre(b); $('prevDet').innerHTML=h; $('prevDet').classList.remove('oculto'); })
@@ -594,6 +605,66 @@ function linkWhats(numero, texto){
   var d=String(numero||'').replace(/\D/g,''); if(d.length===10||d.length===11) d='55'+d;
   return 'https://wa.me/'+d+'?text='+encodeURIComponent(texto);
 }
+/* ---------- Barra de pesquisa no texto (como o Ctrl+F do Word) ----------
+   Ignora maiúsculas e acentos: "multa" encontra "Multa" e "MULTA". */
+function semAcento(c){ return c.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); }
+function criarBusca(caixa, ta){
+  if(!caixa || !ta) return;
+  caixa.innerHTML =
+    '<div class="busca">'+
+      '<span class="lupa">🔍</span>'+
+      '<input type="search" class="b-termo" placeholder="Pesquisar no texto (ex.: multa, 30%, cláusula 13)">'+
+      '<button type="button" class="b2 mini b-ant" title="Anterior">▲</button>'+
+      '<button type="button" class="b2 mini b-prox" title="Próxima">▼</button>'+
+      '<span class="b-cont"></span>'+
+    '</div><div class="b-lista oculto"></div>';
+  var inp=caixa.querySelector('.b-termo'), cont=caixa.querySelector('.b-cont'), lista=caixa.querySelector('.b-lista');
+  var achados=[], atual=-1;
+  function procurar(){
+    var termo=inp.value.trim(); achados=[]; atual=-1;
+    if(!termo){ cont.textContent=''; lista.classList.add('oculto'); lista.innerHTML=''; return; }
+    var txt=ta.value, norm='', mapa=[];
+    for(var i=0;i<txt.length;i++){ var n=semAcento(txt[i]); for(var j=0;j<n.length;j++){ norm+=n[j]; mapa.push(i); } }
+    var alvo=''; for(var k=0;k<termo.length;k++) alvo+=semAcento(termo[k]);
+    var pos=norm.indexOf(alvo);
+    while(pos>=0 && alvo){
+      var ini=mapa[pos], fim=mapa[pos+alvo.length-1]+1;
+      achados.push([ini,fim]);
+      pos=norm.indexOf(alvo,pos+alvo.length);
+    }
+    cont.textContent = achados.length ? achados.length+' encontrado(s)' : 'nada encontrado';
+    cont.className='b-cont'+(achados.length?'':' b-nada');
+    lista.innerHTML = achados.slice(0,50).map(function(a,ix){
+      var lIni=txt.lastIndexOf('\n',a[0]-1)+1, lFim=txt.indexOf('\n',a[1]); if(lFim<0) lFim=txt.length;
+      var de=Math.max(lIni,a[0]-70), ate=Math.min(lFim,a[1]+90);
+      var rot=(txt.slice(lIni,lFim).match(/^(CLÁUSULA\s+[\d.]+ª|§\s*\d+º|PARÁGRAFO\s+\S+|#+\s*[^\n]{0,40})/i)||[''])[0].replace(/^#+\s*/,'');
+      var limpa=function(x){ return esc_(x.replace(/\*\*/g,'')); };
+      return '<div class="b-item" data-i="'+ix+'">'+(rot&&de>lIni?'<b>'+esc_(rot)+'</b> · ':'')+(de>lIni?'…':'')+
+        limpa(txt.slice(de,a[0]))+'<mark>'+limpa(txt.slice(a[0],a[1]))+'</mark>'+limpa(txt.slice(a[1],ate))+(ate<lFim?'…':'')+'</div>';
+    }).join('') + (achados.length>50?'<div class="ajuda">Mostrando os 50 primeiros.</div>':'');
+    lista.classList.toggle('oculto', !achados.length);
+    lista.querySelectorAll('.b-item').forEach(function(el){ el.onclick=function(){ ir(Number(el.dataset.i)); }; });
+  }
+  function ir(i){
+    if(!achados.length) return;
+    atual=(i+achados.length)%achados.length;
+    var a=achados[atual];
+    ta.focus(); ta.setSelectionRange(a[0],a[1]);
+    // rola o editor até o trecho
+    var antes=ta.value.slice(0,a[0]), linhas=antes.split('\n').length;
+    var total=ta.value.split('\n').length;
+    ta.scrollTop=Math.max(0, ta.scrollHeight*(a[0]/Math.max(1,ta.value.length)) - ta.clientHeight/3);
+    cont.textContent=(atual+1)+' de '+achados.length;
+    lista.querySelectorAll('.b-item').forEach(function(el){ el.classList.toggle('b-sel', Number(el.dataset.i)===atual); });
+  }
+  var t=null;
+  inp.addEventListener('input', function(){ clearTimeout(t); t=setTimeout(procurar,150); });
+  inp.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); if(!achados.length) procurar(); ir(e.shiftKey?atual-1:atual+1); inp.focus(); } });
+  caixa.querySelector('.b-prox').onclick=function(){ if(!achados.length) procurar(); ir(atual+1); };
+  caixa.querySelector('.b-ant').onclick=function(){ if(!achados.length) procurar(); ir(atual-1); };
+  ta.addEventListener('input', function(){ if(inp.value.trim()){ clearTimeout(t); t=setTimeout(procurar,300); } });
+}
+
 function camposAtuais(o){
   var c={}; CAMPOS_FORM.cadastro.concat(CAMPOS_FORM.contrato).forEach(function(x){ c[x[0]]=o[x[0]]||''; }); c.texto=o.texto||'';
   var ord={}; document.querySelectorAll('#detalhe [data-k]').forEach(function(el){ ord[el.dataset.k]=c[el.dataset.k]; }); return ord;
@@ -632,6 +703,7 @@ function mostrarModelo(){
   });
 }
 $('selModelo').addEventListener('change', mostrarModelo);
+criarBusca($('buscaModelo'), $('txtModelo'));
 $('btnPrevModelo').addEventListener('click', function(){
   var m=modeloSel(); var d=montarDados(Object.assign({}, EXEMPLO, {tipo:m.id==='RECIBO'?'PF':m.id}), INICIO?INICIO.cfg:{});
   $('prevModelo').innerHTML = renderContrato($('txtModelo').value, d, {}) + assinaturasHtml(d, INICIO?INICIO.cfg:{}, '', {recibo:m.id==='RECIBO', id:'CT-EXEMPLO'});
