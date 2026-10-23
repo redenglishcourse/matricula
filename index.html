@@ -256,6 +256,12 @@ function montarDados(d, cfg) {
   o.empresa_cnpj = cfg.empresa_cnpj;
   o.empresa_endereco = cfg.empresa_endereco;
   o.data_extenso = d.dataContrato || dataExtenso(new Date());
+  var vp = parseFloat(String(d.valorParcela || '').replace(/\./g, '').replace(',', '.'));
+  var np = parseInt(d.parcelas, 10);
+  o.valor_total = (vp && np) ? (vp * np).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '';
+  var ch = String(d.descricao || '').match(/certificado de (\d+)\s*horas/i);
+  var nm = String(d.planoNome || d.descricao || '').match(/(\d)\s*(?:\(\w+\)\s*)?m[óo]dulo/i);
+  o.carga_horaria = ch ? ch[1] : (nm ? String(Number(nm[1]) * 60) : '');
   o.documento_contratante = d.tipo === 'PJ' ? (d.pjCnpj || '') : (d.cpf || '');
   o.aluno_ficha = d.tipo === 'PF' ? (d.nome || '') : (d.alunoNome || '');
   return o;
@@ -277,11 +283,14 @@ function renderContrato(texto, dados, opts) {
   var emLista = false;
 
   function trocar(s) {
-    return esc_(s).replace(/\{\{\s*([a-zA-Z_0-9]+)\s*\}\}/g, function (m, chave) {
+    var s2 = esc_(s).replace(/\{\{\s*([a-zA-Z_0-9]+)\s*\}\}/g, function (m, chave) {
       var v = dados[chave];
       if (v === undefined || v === null || String(v).trim() === '') return vazio;
       return opts.pdf ? esc_(v) : '<b class="ct-campo">' + esc_(v) + '</b>';
     });
+    // **texto** = negrito (frases que a lei manda destacar)
+    s2 = s2.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+    return s2;
   }
   function rotulo(s) {
     return s.replace(/^(CLÁUSULA\s+[\d.]+ª\.?|§\s*\d+º|PARÁGRAFO\s+(?:ÚNICO|\d+º)\.?:?)/i, '<b>$1</b>');
@@ -472,7 +481,7 @@ var VELOCIDADES = [1, 1.25, 1.5, 2];
 var velAtual = 1;
 function mostrarAudios(alvo, lista){
   $(alvo).innerHTML = lista.length ? lista.map(function(a, i){
-    return '<div class="audio" data-id="'+esc_(a.id)+'"><div class="t">🎧 '+esc_(a.titulo)+'</div>'+
+    return '<div class="audio" data-id="'+esc_(a.id||'')+'" data-url="'+esc_(a.url||'')+'"><div class="t">🎧 '+esc_(a.titulo)+'</div>'+
       '<button type="button" class="btn-ouvir">▶ Ouvir</button>'+
       '<audio controls preload="none" class="oculto"></audio>'+
       '<div class="vel oculto">Velocidade: '+VELOCIDADES.map(function(v){ return '<button type="button" data-v="'+v+'">'+String(v).replace('.',',')+'x</button>'; }).join('')+'</div></div>';
@@ -493,6 +502,14 @@ function mostrarAudios(alvo, lista){
     });
     btn.addEventListener('click', function(){
       btn.disabled=true; btn.textContent='Carregando áudio…';
+      function mostrar(){ btn.classList.add('oculto'); au.classList.remove('oculto'); vel.classList.remove('oculto'); marcar(); au.playbackRate=velAtual; au.play().catch(function(){}); }
+      if(box.dataset.url){
+        // Link direto: o navegador toca sozinho (funciona em iPhone e Android)
+        au.preload='auto'; au.src=box.dataset.url;
+        au.onerror=function(){ btn.disabled=false; btn.classList.remove('oculto'); btn.textContent='▶ Tentar de novo'; au.classList.add('oculto'); vel.classList.add('oculto'); alert('Não foi possível carregar o áudio. Verifique a internet e tente de novo.'); };
+        mostrar();
+        return;
+      }
       run('getAudio', box.dataset.id).then(function(r){
         var bin=atob(r.b64), bytes=new Uint8Array(bin.length);
         for(var i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
