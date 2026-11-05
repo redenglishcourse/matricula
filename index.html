@@ -60,6 +60,15 @@
   .msg.erro{display:block;background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
   .msg.ok{display:block;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
   .oculto{display:none!important}
+  .ola{background:#eff6ff;border-color:#bfdbfe}
+  .ola b{color:#1e3a8a}
+  .link-consultor{color:#94a3b8;font-size:12px;text-decoration:none}
+  .modal{position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:50;overflow:auto;padding:24px 12px}
+  .modal-caixa{background:#fff;border-radius:12px;max-width:760px;margin:0 auto;padding:18px}
+  .barra-topo{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .selfie{border:1px solid var(--borda);border-radius:10px;padding:12px;margin-bottom:12px;background:#f8fafc}
+  .selfie video,.selfie img{width:100%;max-width:320px;border-radius:10px;display:block;margin:8px 0;background:#000}
+  .selfie .pular{font-size:13px;color:var(--suave)}
   .pix{background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:12px 14px;margin-bottom:6px;display:grid;gap:4px}
   .pix-tit{font-weight:800;color:#065f46}
   .pix-chave{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -81,6 +90,7 @@
 
   <!-- ===================== MATRÍCULA ===================== -->
   <div id="telaForm" class="oculto">
+    <div class="card ola oculto" id="caixaProposta"></div>
     <div class="card aviso" id="avisoNeg"></div>
 
     <div class="card">
@@ -184,6 +194,7 @@
     <div class="card oculto" id="cardAssinar">
       <h2><span class="passo">3</span><span id="titPasso3">Assinatura</span></h2>
       <label class="check"><input type="checkbox" id="concordo"> <span id="txtConcordo">Li (ou ouvi) o contrato, entendi e concordo com todas as cláusulas.</span></label>
+      <div id="areaSelfie"></div>
       <div id="areaAssinatura"></div>
       <div id="areaCodigo"></div>
       <button class="btn btn-grande" id="btnEnviar">Assinar e enviar contrato</button>
@@ -203,6 +214,7 @@
     <div class="card">
       <h2>Assinatura</h2>
       <label class="check"><input type="checkbox" id="concordo2"> Li (ou ouvi) a nova versão do contrato e concordo com todas as cláusulas.</label>
+      <div id="areaSelfie2"></div>
       <div id="areaAssinatura2"></div>
       <div id="areaCodigo2"></div>
       <button class="btn btn-grande" id="btnAceite">Assinar nova versão</button>
@@ -213,7 +225,45 @@
   <!-- ===================== SUCESSO / ERRO ===================== -->
   <div id="telaFim" class="card sucesso oculto"></div>
 </main>
-<footer>Seus dados são usados somente para o contrato e a prestação do curso.</footer>
+<footer>Seus dados são usados somente para o contrato e a prestação do curso.<br><a href="#" id="linkConsultor" class="link-consultor">Área do consultor</a></footer>
+
+<!-- ===================== ÁREA DO CONSULTOR ===================== -->
+<div id="consultor" class="modal oculto">
+  <div class="modal-caixa">
+    <div class="barra-topo"><h2 style="margin:0">Área do consultor</h2><button type="button" class="btn2" id="fecharConsultor">Fechar</button></div>
+    <div id="cEntrar">
+      <p class="ajuda">Acesso só para consultores da R.E.D.</p>
+      <input type="password" id="cSenha" placeholder="Senha do consultor">
+      <button type="button" class="btn btn-grande" id="cBtnEntrar">Entrar</button>
+      <div class="msg" id="cMsgEntrar"></div>
+    </div>
+    <div id="cForm" class="oculto">
+      <label for="cMensagem">Cole aqui a mensagem da matrícula</label>
+      <textarea id="cMensagem" rows="7" placeholder="⚠️*Matrícula/ Anúncio 17* ⚠️&#10;* *Consultor:* …&#10;* *Aluno:* …&#10;* *Idade* …&#10;* *Plano:* 4 módulos&#10;* *Duração:* 20 meses&#10;* *Formato:* Turma&#10;* *Aulas por semana:* 2&#10;* *Valor:* 105/mês&#10;*1° mensalidade: 10 de novembro ⚠️*"></textarea>
+      <p class="ajuda" style="margin-top:4px">Os campos abaixo são preenchidos sozinhos. Confira ou ajuste se precisar.</p>
+      <div class="grade">
+        <div><label for="cConsultor">Consultor</label><input id="cConsultor"></div>
+        <div><label for="cAnuncio">Anúncio</label><input id="cAnuncio" placeholder="Ex.: 17"></div>
+        <div><label for="cAluno">Aluno</label><input id="cAluno"></div>
+        <div><label for="cIdade">Idade</label><input id="cIdade" inputmode="numeric"></div>
+        <div><label for="cFormato">Formato</label><select id="cFormato"><option>Turma</option><option>Particular</option></select></div>
+        <div><label for="cPlano">Plano</label><input id="cPlano" placeholder="Ex.: 4 módulos · Sem compromisso · 1 aula em grupo + 1 particular"></div>
+        <div><label for="cDuracao">Duração (meses)</label><input id="cDuracao" inputmode="numeric"></div>
+        <div><label for="cAulas">Aulas por semana</label><input id="cAulas" inputmode="numeric" value="2"></div>
+        <div><label for="cValor">Valor mensal (R$)</label><input id="cValor" inputmode="decimal"></div>
+        <div><label for="cData">1ª mensalidade</label><input id="cData" placeholder="dd/mm/aaaa" inputmode="numeric"></div>
+      </div>
+      <button type="button" class="btn btn-grande" id="cGerar">Gerar link de contrato</button>
+      <div class="msg" id="cMsg"></div>
+      <div id="cResultado" class="oculto">
+        <div class="resumo" id="cResumo"></div>
+        <label>Mensagem para o aluno (já com o link)</label>
+        <textarea id="cTextoAluno" rows="4" readonly></textarea>
+        <div class="linha-botoes"><button type="button" class="btn" id="cCopiarMsg">Copiar mensagem para o aluno</button><button type="button" class="btn2" id="cCopiarLink">Copiar só o link</button><button type="button" class="btn2" id="cNovo">Gerar outro</button></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <style id="cssContrato"></style>
 <script>
@@ -322,8 +372,10 @@ function assinaturasHtml(d, cfg, assinaturaDataUrl, meta) {
     ? (esc_(d.pjRepNome || '') + ' – CPF: ' + esc_(d.pjRepCpf || '') + '<br>Representante legal de ' + esc_(d.pjRazao || '') + ' – CNPJ: ' + esc_(d.pjCnpj || ''))
     : (esc_(d.nome || '') + '<br>CPF: ' + esc_(d.cpf || ''));
   var img = assinaturaDataUrl
-    ? '<img src="' + assinaturaDataUrl + '" style="height:70px;max-width:260px;display:block">'
-    : '<div style="height:60px"></div>';
+    ? '<img src="' + assinaturaDataUrl + '" style="height:70px;max-width:260px;display:inline-block;vertical-align:bottom">'
+    : '<div style="height:60px;display:inline-block"></div>';
+  if (meta.selfie) img += '<img src="' + meta.selfie + '" style="height:90px;width:auto;border-radius:6px;margin-left:16px;display:inline-block;vertical-align:bottom">';
+  img = '<div>' + img + '</div>';
   var registro = meta.assinadoEm
     ? '<p class="ct-reg">Assinado eletronicamente em ' + esc_(meta.assinadoEm) +
       (meta.email ? ', com confirmação por código enviado para ' + esc_(meta.email) : '') +
@@ -333,6 +385,7 @@ function assinaturasHtml(d, cfg, assinaturaDataUrl, meta) {
       (meta.ip ? '<br>IP na assinatura: ' + esc_(meta.ip) : '') +
       (meta.dispositivo ? '<br>Dispositivo/navegador: ' + esc_(meta.dispositivo) : '') +
       (meta.comprovanteEm ? '<br>Cópia integral enviada ao e-mail do contratante em ' + esc_(meta.comprovanteEm) + '.' : '') +
+      (meta.selfie ? '<br>Foto do contratante registrada no momento da assinatura, com consentimento específico, exclusivamente para comprovar a assinatura (LGPD, art. 11, I).' : '') +
       '</p>'
     : '';
   if (meta.recibo) {
@@ -367,8 +420,9 @@ var CSS_CONTRATO =
 </script>
 
 <script>
-var PARAMS = (function(){ var q=new URLSearchParams(location.search); return { plano:q.get('plano')||'', tipo:q.get('tipo')||'', aceite:q.get('aceite')||'', token:q.get('t')||'' }; })();
+var PARAMS = (function(){ var q=new URLSearchParams(location.search); return { plano:q.get('plano')||'', tipo:q.get('tipo')||'', aceite:q.get('aceite')||'', token:q.get('t')||'', proposta:q.get('p')||'' }; })();
 var D = null;            // dados públicos (modelos, planos, config)
+var PROPOSTA = null;     // link gerado pelo consultor (se houver)
 var pads = {};           // quadros de assinatura
 var IP = '';
 try {
@@ -429,7 +483,8 @@ function dataPagamentoValida(v){
   var m=String(v||'').match(/^(\d{2})\/(\d{2})\/(\d{4})$/); if(!m) return false;
   var d=new Date(+m[3],m[2]-1,+m[1]); if(d.getDate()!=+m[1]||d.getMonth()!=m[2]-1) return false;
   var hoje=new Date(); hoje.setHours(0,0,0,0);
-  var dias=(d-hoje)/86400000; return dias>=-7 && dias<=120;
+  var dias=Math.round((d-hoje)/86400000);
+  return (typeof ehRecibo==='function' && D && ehRecibo()) ? (dias>=-7 && dias<=1) : (dias>=0 && dias<=30);
 }
 function idade(v){ var m=v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/); var n=new Date(+m[3],m[2]-1,+m[1]); var h=new Date(); var a=h.getFullYear()-n.getFullYear(); if(h<new Date(h.getFullYear(),n.getMonth(),n.getDate())) a--; return a; }
 
@@ -437,7 +492,7 @@ function idade(v){ var m=v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/); var n=new Date(
 function criarAssinatura(alvo, chave){
   $(alvo).innerHTML =
     '<label>Assine com o dedo (celular) ou com o mouse (computador)</label>'+
-    '<p class="ajuda" style="margin:0 0 6px">Ao assinar, registramos data, hora, dispositivo e a confirmação do seu e-mail, e enviamos uma cópia do documento para você.</p>'+
+    '<p class="ajuda" style="margin:0 0 6px">Ao assinar, registramos data, hora e dispositivo, e enviamos uma cópia do documento para o seu e-mail.</p>'+
     '<div class="assin"><canvas></canvas><div class="base"></div><div class="dica">assine aqui</div></div>'+
     '<div class="linha-botoes"><button type="button" class="btn2">Limpar assinatura</button></div>';
   var box=$(alvo).querySelector('.assin'), cv=box.querySelector('canvas'), dica=box.querySelector('.dica');
@@ -519,6 +574,45 @@ function mostrarAudios(alvo, lista){
       }).catch(function(e){ btn.disabled=false; btn.textContent='▶ Tentar de novo'; alert(e.message); });
     });
   });
+}
+
+/* ---------- Foto (selfie) ----------
+   Aparece como passo normal. Só se a câmera falhar surge "continuar sem foto". */
+var selfies = {};
+function criarSelfie(alvo, chave){
+  var st = selfies[chave] = { foto:'', pulou:false, falhou:false, stream:null };
+  $(alvo).innerHTML =
+    '<div class="selfie"><label style="margin-top:0">Foto para confirmar sua identidade</label>'+
+    '<p class="ajuda" style="margin:0 0 8px">Tire uma foto do seu rosto. Ela é usada apenas para comprovar a sua assinatura, conforme a LGPD.</p>'+
+    '<video class="oculto" autoplay playsinline muted></video><img class="oculto" alt="Sua foto">'+
+    '<div class="linha-botoes"><button type="button" class="btn2 s-abrir">📷 Abrir câmera</button><button type="button" class="btn s-tirar oculto">Tirar foto</button><button type="button" class="btn2 s-outra oculto">Tirar outra</button></div>'+
+    '<div class="msg s-msg"></div><a href="#" class="pular s-pular oculto">Não está conseguindo? Continuar sem foto</a></div>';
+  var box=$(alvo), video=box.querySelector('video'), img=box.querySelector('img'), msg=box.querySelector('.s-msg');
+  var bAbrir=box.querySelector('.s-abrir'), bTirar=box.querySelector('.s-tirar'), bOutra=box.querySelector('.s-outra'), pular=box.querySelector('.s-pular');
+  function parar(){ if(st.stream){ st.stream.getTracks().forEach(function(t){ t.stop(); }); st.stream=null; } }
+  function falhar(t){ st.falhou=true; msg.className='msg s-msg erro'; msg.textContent=t; pular.classList.remove('oculto'); bAbrir.textContent='📷 Tentar de novo'; }
+  bAbrir.onclick=function(){
+    msg.className='msg s-msg';
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return falhar('Este aparelho ou navegador não permite usar a câmera por aqui.');
+    navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user' }, audio:false }).then(function(s){
+      st.stream=s; video.srcObject=s; video.classList.remove('oculto'); img.classList.add('oculto');
+      bAbrir.classList.add('oculto'); bTirar.classList.remove('oculto'); bOutra.classList.add('oculto');
+    }).catch(function(){ falhar('Não foi possível abrir a câmera. Verifique se você permitiu o acesso à câmera e tente de novo.'); });
+  };
+  bTirar.onclick=function(){
+    var w=480, h=Math.round(480*(video.videoHeight||640)/(video.videoWidth||480)), c=document.createElement('canvas'); c.width=w; c.height=h;
+    c.getContext('2d').drawImage(video,0,0,w,h); st.foto=c.toDataURL('image/jpeg',0.75);
+    parar(); img.src=st.foto; img.classList.remove('oculto'); video.classList.add('oculto');
+    bTirar.classList.add('oculto'); bOutra.classList.remove('oculto'); msg.className='msg s-msg ok'; msg.textContent='Foto registrada ✓'; pular.classList.add('oculto');
+  };
+  bOutra.onclick=function(){ st.foto=''; bAbrir.onclick(); };
+  pular.onclick=function(e){ e.preventDefault(); st.pulou=true; parar(); msg.className='msg s-msg ok'; msg.textContent='Tudo bem, você pode continuar sem a foto.'; pular.classList.add('oculto'); };
+  return st;
+}
+function checarSelfie(chave){
+  var st=selfies[chave]; if(!st) return '';
+  if(st.foto || st.pulou) return '';
+  return st.falhou ? 'Tente abrir a câmera de novo ou clique em "Continuar sem foto".' : 'Tire a foto do seu rosto para confirmar sua identidade (botão "Abrir câmera").';
 }
 
 function lerArquivo(f){
@@ -612,7 +706,7 @@ function validar(o){
   if(t==='PJ' && !cpfValido(o.pjRepCpf)) return 'O CPF do representante não é válido.';
   if(t==='PJ' && !dataValida(o.pjRepNascimento)) return 'Data de nascimento do representante inválida.';
   if(t==='PJ' && o.alunoCpf && !cpfValido(o.alunoCpf)) return 'O CPF do aluno não é válido.';
-  if(!dataPagamentoValida(o.primeiroPagamento)) return ehRecibo() ? 'Data do PIX inválida (use dd/mm/aaaa).' : 'Data do primeiro pagamento inválida (use dd/mm/aaaa, a partir de hoje).';
+  if(!dataPagamentoValida(o.primeiroPagamento)) return ehRecibo() ? 'Data do PIX inválida (use dd/mm/aaaa, a data em que o pagamento foi feito).' : 'A data do primeiro pagamento deve ser de hoje até 30 dias a partir de hoje (use dd/mm/aaaa).';
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(o.email)) return 'E-mail inválido.';
   if(so(o.whatsapp).length<10) return 'WhatsApp inválido (inclua o DDD).';
   if(so(o.cep).length!==8) return 'CEP inválido.';
@@ -644,11 +738,15 @@ function iniciarForm(){
   if(PARAMS.tipo){ var r=document.querySelector('input[name=tipo][value="'+PARAMS.tipo+'"]'); if(r) r.checked=true; }
   atualizarTipo(); atualizarPlano();
 
+  criarSelfie('areaSelfie','form');
   criarAssinatura('areaAssinatura','form');
-  lerCodigo = criarCodigo('areaCodigo','o e-mail informado acima', function(){
-    var e=$('email').value.trim(); if(!e) return Promise.reject(new Error('Preencha o e-mail no passo 1.'));
-    return run('enviarCodigo', e);
-  });
+  if(D.cfg.exigir_codigo){
+    lerCodigo = criarCodigo('areaCodigo','o e-mail informado acima', function(){
+      var e=$('email').value.trim(); if(!e) return Promise.reject(new Error('Preencha o e-mail no passo 1.'));
+      return run('enviarCodigo', e);
+    });
+  } else { lerCodigo = function(){ return ''; }; }
+  if(PROPOSTA) aplicarProposta();
 
   $('btnEnviar').addEventListener('click', function(){
     limparMsg('msgEnviar');
@@ -659,10 +757,13 @@ function iniciarForm(){
     var arq = $('comprovante').files[0];
     if(!erro && recibo && !arq) erro='Anexe o comprovante do PIX.';
     if(!erro && recibo && arq.size > 8*1024*1024) erro='O comprovante é muito grande (máximo 8 MB).';
+    if(!erro) erro=checarSelfie('form');
     if(!erro && !recibo && pads.form.vazia()) erro='Faça sua assinatura no quadro.';
     var cod=lerCodigo();
-    if(!erro && !/^\d{6}$/.test(cod)) erro='Digite o código de 6 números enviado para o seu e-mail.';
+    if(!erro && D.cfg.exigir_codigo && !/^\d{6}$/.test(cod)) erro='Digite o código de 6 números enviado para o seu e-mail.';
     if(erro) return mostrarMsg('msgEnviar', erro);
+    if(PROPOSTA) o.proposta=PARAMS.proposta;
+    if(selfies.form && selfies.form.foto) o.selfie=selfies.form.foto;
     o.concordo=true; o.codigo=cod; o.ip=IP; o.dispositivo=navigator.userAgent; o.negociar=recibo ? '' : $('negociar').value.trim();
     if(!recibo) o.assinatura=pads.form.imagem();
     var b=$('btnEnviar'); b.disabled=true; b.textContent='Enviando…';
@@ -689,17 +790,19 @@ function iniciarAceite(){
     $('aceiteOla').textContent = 'Olá, '+r.nome+'. O contrato foi atualizado conforme combinado com nossa equipe. Leia ou ouça a versão abaixo e assine para concluir.';
     mostrarAudios('audios2', r.audios);
     $('contrato2').innerHTML = r.html;
+    criarSelfie('areaSelfie2','aceite');
     criarAssinatura('areaAssinatura2','aceite');
-    var ler = criarCodigo('areaCodigo2', esc_(r.email), function(){ return run('enviarCodigoAceite', PARAMS.aceite, PARAMS.token); });
+    var ler = r.cfg.exigir_codigo ? criarCodigo('areaCodigo2', esc_(r.email), function(){ return run('enviarCodigoAceite', PARAMS.aceite, PARAMS.token); }) : function(){ return ''; };
     $('btnAceite').addEventListener('click', function(){
       limparMsg('msgAceite');
       var erro='';
       if(!$('concordo2').checked) erro='Marque que leu e concorda com a nova versão.';
+      else if(checarSelfie('aceite')) erro=checarSelfie('aceite');
       else if(pads.aceite.vazia()) erro='Faça sua assinatura no quadro.';
-      else if(!/^\d{6}$/.test(ler())) erro='Digite o código de 6 números enviado para o seu e-mail.';
+      else if(r.cfg.exigir_codigo && !/^\d{6}$/.test(ler())) erro='Digite o código de 6 números enviado para o seu e-mail.';
       if(erro) return mostrarMsg('msgAceite', erro);
       var b=$('btnAceite'); b.disabled=true; b.textContent='Enviando…';
-      run('confirmarAceite', PARAMS.aceite, PARAMS.token, pads.aceite.imagem(), ler(), {ip:IP, dispositivo:navigator.userAgent}).then(function(){
+      run('confirmarAceite', PARAMS.aceite, PARAMS.token, pads.aceite.imagem(), ler(), {ip:IP, dispositivo:navigator.userAgent, selfie:(selfies.aceite&&selfies.aceite.foto)||''}).then(function(){
         fim('<div class="icone">✅</div><h2>Nova versão assinada!</h2><p>Obrigado. Em breve você receberá o contrato final por e-mail e WhatsApp.</p>');
       }).catch(function(e){ mostrarMsg('msgAceite', e.message); b.disabled=false; b.textContent='Assinar nova versão'; });
     });
@@ -711,11 +814,105 @@ function iniciarAceite(){
 }
 
 /* ===================== INÍCIO ===================== */
-if(PARAMS.aceite){ iniciarAceite(); }
+if(PARAMS.aceite){ iniciarAceite(); $('linkConsultor').classList.add('oculto'); }
 else {
-  run('getDadosPublicos').then(function(d){ D=d; iniciarForm(); })
+  var carregar = [run('getDadosPublicos')];
+  if(PARAMS.proposta) carregar.push(run('getProposta', PARAMS.proposta));
+  Promise.all(carregar).then(function(res){ D=res[0]; PROPOSTA=res[1]||null; iniciarForm(); })
     .catch(function(e){ fim('<div class="icone">⚠️</div><h2>Não foi possível carregar</h2><p>'+esc_(e.message)+'</p>'); });
+  if(PARAMS.proposta) $('linkConsultor').classList.add('oculto');
 }
+
+/* ===================== LINK DO CONSULTOR (aluno) ===================== */
+function aplicarProposta(){
+  var p=PROPOSTA, pl=p.plano;
+  D.planos.push({ id:'__PROP', nome:pl.nome, descricao:pl.descricao, valorParcela:pl.valorParcela, parcelas:pl.parcelas, validade:pl.validade, documento:pl.documento, ativo:true });
+  $('plano').innerHTML += '<option value="__PROP">'+esc_(pl.nome)+'</option>';
+  $('plano').value='__PROP'; $('plano').disabled=true;
+  var r=document.querySelector('input[name=tipo][value="'+(p.tipo||'PF')+'"]'); if(r) r.checked=true;
+  atualizarTipo(); atualizarPlano();
+  if(p.tipo==='MENOR') $('alunoNome').value=p.aluno; else $('nome').value=p.aluno;
+  if(pl.documento!=='Recibo de pagamento'){ $('primeiroPagamento').value=p.primeiroPagamento; $('primeiroPagamento').readOnly=true; }
+  var primeiro=String(p.aluno||'').split(' ')[0];
+  $('caixaProposta').innerHTML='<b>Olá'+(primeiro?', '+esc_(primeiro.charAt(0).toUpperCase()+primeiro.slice(1).toLowerCase()):'')+'!</b> Seu plano já está separado: <b>'+esc_(pl.nome)+'</b> · R$ '+esc_(pl.valorParcela)+'/mês'+
+    (pl.documento!=='Recibo de pagamento' ? ' · 1ª mensalidade em <b>'+esc_(p.primeiroPagamento)+'</b>' : '')+'. Preencha seus dados abaixo e confira se o seu nome está completo.';
+  $('caixaProposta').classList.remove('oculto');
+  atualizarContrato();
+}
+
+/* ===================== ÁREA DO CONSULTOR ===================== */
+var SENHA_CONSULTOR='';
+var MESES_PT=['janeiro','fevereiro','marco','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+function semAc(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); }
+function lerMensagem(txt){
+  var limpo=String(txt||'').replace(/\*/g,'').replace(/⚠️|⚠/g,'');
+  function campo(rot){
+    var re=new RegExp('^[\\s•\\-]*'+rot+'\\s*:?\\s*(.+)$','im'); var m=semAc(limpo).match(re);
+    if(!m) return '';
+    var ini=semAc(limpo).indexOf(m[0]); var linha=limpo.substr(ini, m[0].length); var pos=linha.length-m[1].length;
+    return linha.slice(pos).trim();
+  }
+  var r={ consultor:campo('consultor'), aluno:campo('aluno'), idade:(campo('idade').match(/\d+/)||[''])[0],
+    plano:campo('plano'), formato:campo('formato'), duracao:(campo('duracao').match(/\d+/)||[''])[0],
+    aulas:(campo('aulas por semana').match(/\d+/)||[''])[0], valor:(campo('valor').match(/\d+(?:[.,]\d{1,2})?/)||[''])[0],
+    anuncio:(semAc(limpo).match(/anuncio\s*(\d+)/)||[,''])[1], data:'' };
+  var dm=campo('1\\S*\\s*mensalidade');
+  var d=semAc(dm), hoje=new Date(), dia, mes=-1, ano; hoje.setHours(0,0,0,0);
+  var m1=d.match(/(\d{1,2})\s*\/\s*(\d{1,2})(?:\s*\/\s*(\d{2,4}))?/), m2=d.match(/(\d{1,2})\s*(?:de)?\s*([a-z]+)/);
+  if(m1){ dia=+m1[1]; mes=+m1[2]-1; ano=m1[3]?(+m1[3]<100?2000+(+m1[3]):+m1[3]):null; }
+  else if(m2 && MESES_PT.map(function(x){return x.slice(0,3);}).indexOf(m2[2].slice(0,3))>=0){ dia=+m2[1]; mes=MESES_PT.map(function(x){return x.slice(0,3);}).indexOf(m2[2].slice(0,3)); ano=null; }
+  if(dia && mes>=0){
+    if(!ano){ ano=hoje.getFullYear(); if(new Date(ano,mes,dia)<hoje) ano++; }
+    r.data=('0'+dia).slice(-2)+'/'+('0'+(mes+1)).slice(-2)+'/'+ano;
+  }
+  if(/part/.test(semAc(r.formato))) r.formato='Particular'; else if(r.formato) r.formato='Turma';
+  return r;
+}
+function preencherConsultor(){
+  var r=lerMensagem($('cMensagem').value);
+  var map={cConsultor:'consultor',cAnuncio:'anuncio',cAluno:'aluno',cIdade:'idade',cPlano:'plano',cDuracao:'duracao',cAulas:'aulas',cValor:'valor',cData:'data'};
+  Object.keys(map).forEach(function(id){ if(r[map[id]]) $(id).value=r[map[id]]; });
+  if(r.formato) $('cFormato').value=r.formato;
+  if(!r.aulas && !$('cAulas').value) $('cAulas').value='2';
+}
+$('linkConsultor').onclick=function(e){ e.preventDefault(); $('consultor').classList.remove('oculto'); if(!SENHA_CONSULTOR) $('cSenha').focus(); };
+$('fecharConsultor').onclick=function(){ $('consultor').classList.add('oculto'); };
+$('cBtnEntrar').onclick=function(){
+  var s=$('cSenha').value, b=this; b.disabled=true; b.textContent='Entrando…';
+  run('entrarConsultor', s).then(function(){ SENHA_CONSULTOR=s; $('cEntrar').classList.add('oculto'); $('cForm').classList.remove('oculto'); $('cMensagem').focus(); })
+    .catch(function(e){ mostrarMsg('cMsgEntrar', e.message); }).then(function(){ b.disabled=false; b.textContent='Entrar'; });
+};
+$('cSenha').addEventListener('keydown', function(e){ if(e.key==='Enter') $('cBtnEntrar').click(); });
+$('cMensagem').addEventListener('input', function(){ clearTimeout(this._t); this._t=setTimeout(preencherConsultor,200); });
+$('cData').addEventListener('input', function(){ this.value = MASCARAS.data(this.value); });
+$('cGerar').onclick=function(){
+  limparMsg('cMsg');
+  var d={ mensagem:$('cMensagem').value, consultor:$('cConsultor').value, anuncio:$('cAnuncio').value, aluno:$('cAluno').value, idade:$('cIdade').value,
+    formato:$('cFormato').value, plano:$('cPlano').value, duracao:$('cDuracao').value, aulasSemana:$('cAulas').value, valor:$('cValor').value, primeiroPagamento:$('cData').value };
+  var falta=[]; if(!d.aluno) falta.push('aluno'); if(!d.valor) falta.push('valor'); if(!/sem compromisso/i.test(d.plano)){ if(!d.duracao) falta.push('duração'); if(!d.primeiroPagamento) falta.push('1ª mensalidade'); } else if(!d.primeiroPagamento){ d.primeiroPagamento=MASCARAS.data(new Date().toLocaleDateString('pt-BR')); }
+  if(falta.length) return mostrarMsg('cMsg','Falta preencher: '+falta.join(', ')+'.');
+  var b=this; b.disabled=true; b.textContent='Gerando…';
+  run('criarLinkConsultor', SENHA_CONSULTOR, d).then(function(r){
+    var pl=r.plano, recibo=pl.documento==='Recibo de pagamento';
+    $('cResumo').innerHTML='<b>'+esc_(r.aluno)+'</b>'+(r.tipo==='MENOR'?' (menor – o responsável assina)':'')+'<br>'+esc_(pl.nome)+' · R$ '+esc_(pl.valorParcela)+'/mês'+
+      (recibo?'':' · '+esc_(pl.parcelas)+' parcelas · 1ª em '+esc_(r.primeiroPagamento))+'<br>'+
+      (pl.personalizado ? '<span style="color:#b45309">⚠️ Plano personalizado: confira a descrição → '+esc_(pl.descricao)+'</span>' : '<span style="color:#166534">Plano padrão da tabela ✓</span>');
+    var primeiro=String(r.aluno).split(' ')[0]; primeiro=primeiro.charAt(0).toUpperCase()+primeiro.slice(1).toLowerCase();
+    $('cTextoAluno').value='Oi, '+primeiro+', segue link '+(recibo?'para preenchimento dos dados e envio do comprovante de pagamento':'de contrato para leitura e preenchimento dos dados')+': '+r.link;
+    $('cTextoAluno').dataset.link=r.link;
+    $('cResultado').classList.remove('oculto'); $('cGerar').classList.add('oculto');
+  }).catch(function(e){ mostrarMsg('cMsg', e.message); }).then(function(){ b.disabled=false; b.textContent='Gerar link de contrato'; });
+};
+function copiarTexto(t, botao, rotulo){
+  var ok=function(){ botao.textContent='Copiado ✓'; setTimeout(function(){ botao.textContent=rotulo; },1500); };
+  if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(ok,function(){ prompt('Copie:', t); }); else prompt('Copie:', t);
+}
+$('cCopiarMsg').onclick=function(){ copiarTexto($('cTextoAluno').value, this, 'Copiar mensagem para o aluno'); };
+$('cCopiarLink').onclick=function(){ copiarTexto($('cTextoAluno').dataset.link||'', this, 'Copiar só o link'); };
+$('cNovo').onclick=function(){
+  ['cMensagem','cConsultor','cAnuncio','cAluno','cIdade','cPlano','cDuracao','cValor','cData'].forEach(function(id){ if(id!=='cConsultor') $(id).value=''; });
+  $('cAulas').value='2'; $('cResultado').classList.add('oculto'); $('cGerar').classList.remove('oculto'); $('cMensagem').focus();
+};
 </script>
 </body>
 </html>
