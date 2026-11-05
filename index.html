@@ -706,7 +706,7 @@ function validar(o){
   if(t==='PJ' && !cpfValido(o.pjRepCpf)) return 'O CPF do representante não é válido.';
   if(t==='PJ' && !dataValida(o.pjRepNascimento)) return 'Data de nascimento do representante inválida.';
   if(t==='PJ' && o.alunoCpf && !cpfValido(o.alunoCpf)) return 'O CPF do aluno não é válido.';
-  if(!dataPagamentoValida(o.primeiroPagamento)) return ehRecibo() ? 'Data do PIX inválida (use dd/mm/aaaa, a data em que o pagamento foi feito).' : 'A data do primeiro pagamento deve ser de hoje até 30 dias a partir de hoje (use dd/mm/aaaa).';
+  if(!(PROPOSTA && !ehRecibo()) && !dataPagamentoValida(o.primeiroPagamento)) return ehRecibo() ? 'Data do PIX inválida (use dd/mm/aaaa, a data em que o pagamento foi feito).' : 'A data do primeiro pagamento deve ser de hoje até 30 dias a partir de hoje (use dd/mm/aaaa).';
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(o.email)) return 'E-mail inválido.';
   if(so(o.whatsapp).length<10) return 'WhatsApp inválido (inclua o DDD).';
   if(so(o.cep).length!==8) return 'CEP inválido.';
