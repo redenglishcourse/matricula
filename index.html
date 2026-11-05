@@ -665,26 +665,64 @@ function criarSelfie(alvo, chave){
     '<p class="ajuda" style="margin:0 0 8px">Tire uma foto do seu rosto. Ela é usada apenas para comprovar a sua assinatura, conforme a LGPD.</p>'+
     '<video class="oculto" autoplay playsinline muted></video><img class="oculto" alt="Sua foto">'+
     '<div class="linha-botoes"><button type="button" class="btn2 s-abrir">📷 Abrir câmera</button><button type="button" class="btn s-tirar oculto">Tirar foto</button><button type="button" class="btn2 s-outra oculto">Tirar outra</button></div>'+
-    '<div class="msg s-msg"></div><a href="#" class="pular s-pular oculto">Não está conseguindo? Continuar sem foto</a></div>';
+    '<div class="msg s-msg"></div>'+
+    '<div class="s-plano-b oculto" style="margin-top:8px"><button type="button" class="btn s-nativa">📸 Usar a câmera do aparelho</button>'+
+    '<input type="file" accept="image/*" capture="user" class="s-arq" style="display:none"></div>'+
+    '<a href="#" class="pular s-pular oculto" style="display:inline-block;margin-top:10px">Não está conseguindo? Continuar sem foto</a></div>';
   var box=$(alvo), video=box.querySelector('video'), img=box.querySelector('img'), msg=box.querySelector('.s-msg');
   var bAbrir=box.querySelector('.s-abrir'), bTirar=box.querySelector('.s-tirar'), bOutra=box.querySelector('.s-outra'), pular=box.querySelector('.s-pular');
   function parar(){ if(st.stream){ st.stream.getTracks().forEach(function(t){ t.stop(); }); st.stream=null; } }
-  function falhar(t){ st.falhou=true; msg.className='msg s-msg erro'; msg.textContent=t; pular.classList.remove('oculto'); bAbrir.textContent='📷 Tentar de novo'; }
+  var planoB=box.querySelector('.s-plano-b'), bNativa=box.querySelector('.s-nativa'), arq=box.querySelector('.s-arq');
+  var ua=navigator.userAgent||'', dentroDeApp=/Instagram|FBAN|FBAV|FB_IAB|WhatsApp|Line\/|wv\)/i.test(ua), android=/Android/i.test(ua);
+  function falhar(t){ st.falhou=true; parar(); msg.className='msg s-msg erro'; msg.textContent=t; planoB.classList.remove('oculto'); pular.classList.remove('oculto'); bAbrir.textContent='📷 Tentar de novo'; bAbrir.classList.remove('oculto'); bTirar.classList.add('oculto'); video.classList.add('oculto'); }
+  function motivo(e){
+    var n=(e&&e.name)||'';
+    if(n==='NotAllowedError'||n==='PermissionDeniedError'||n==='SecurityError')
+      return 'A câmera está bloqueada para esta página. '+(android
+        ? 'No Chrome, toque no cadeado ao lado do endereço → Permissões → Câmera → Permitir. Se não aparecer, vá em Configurações do aparelho → Apps → Chrome → Permissões → Câmera → Permitir.'
+        : 'Toque no cadeado ao lado do endereço e permita a câmera.')+' Ou use o botão abaixo.';
+    if(n==='NotFoundError'||n==='DevicesNotFoundError'||n==='OverconstrainedError') return 'Não encontramos uma câmera disponível neste aparelho. Use o botão abaixo.';
+    if(n==='NotReadableError'||n==='TrackStartError'||n==='AbortError') return 'A câmera está sendo usada por outro aplicativo. Feche os outros apps (ex.: videochamada) e tente de novo, ou use o botão abaixo.';
+    return 'Não foi possível abrir a câmera por aqui'+(n?' ('+n+')':'')+'. Use o botão abaixo.';
+  }
+  function mostrarFoto(dataUrl){
+    st.foto=dataUrl; parar(); img.src=st.foto; img.classList.remove('oculto'); video.classList.add('oculto');
+    bAbrir.classList.add('oculto'); bTirar.classList.add('oculto'); bOutra.classList.remove('oculto'); planoB.classList.add('oculto');
+    msg.className='msg s-msg ok'; msg.textContent='Foto registrada ✓'; pular.classList.add('oculto');
+  }
+  function iniciar(s){
+    st.stream=s; video.srcObject=s; video.classList.remove('oculto'); img.classList.add('oculto');
+    var pl=video.play && video.play(); if(pl && pl.catch) pl.catch(function(){});
+    bAbrir.classList.add('oculto'); bTirar.classList.remove('oculto'); bOutra.classList.add('oculto');
+  }
   bAbrir.onclick=function(){
     msg.className='msg s-msg';
-    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return falhar('Este aparelho ou navegador não permite usar a câmera por aqui.');
-    navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user' }, audio:false }).then(function(s){
-      st.stream=s; video.srcObject=s; video.classList.remove('oculto'); img.classList.add('oculto');
-      bAbrir.classList.add('oculto'); bTirar.classList.remove('oculto'); bOutra.classList.add('oculto');
-    }).catch(function(){ falhar('Não foi possível abrir a câmera. Verifique se você permitiu o acesso à câmera e tente de novo.'); });
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia)
+      return falhar(dentroDeApp ? 'O navegador deste aplicativo não libera a câmera. Use o botão abaixo, ou abra o link no Chrome/Safari (menu ⋮ → "Abrir no navegador").' : 'Este navegador não permite abrir a câmera por aqui. Use o botão abaixo.');
+    navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user' }, audio:false }).then(iniciar).catch(function(e){
+      if(e && (e.name==='NotAllowedError'||e.name==='PermissionDeniedError')) return falhar(motivo(e));
+      // Alguns tablets Android falham com "facingMode": tenta qualquer câmera
+      navigator.mediaDevices.getUserMedia({ video:true, audio:false }).then(iniciar).catch(function(e2){ falhar(motivo(e2||e)); });
+    });
   };
   bTirar.onclick=function(){
-    var w=480, h=Math.round(480*(video.videoHeight||640)/(video.videoWidth||480)), c=document.createElement('canvas'); c.width=w; c.height=h;
-    c.getContext('2d').drawImage(video,0,0,w,h); st.foto=c.toDataURL('image/jpeg',0.75);
-    parar(); img.src=st.foto; img.classList.remove('oculto'); video.classList.add('oculto');
-    bTirar.classList.add('oculto'); bOutra.classList.remove('oculto'); msg.className='msg s-msg ok'; msg.textContent='Foto registrada ✓'; pular.classList.add('oculto');
+    if(!video.videoWidth){ msg.className='msg s-msg erro'; msg.textContent='A câmera ainda está carregando. Espere um segundo e toque de novo.'; return; }
+    var w=480, h=Math.round(480*video.videoHeight/video.videoWidth), c=document.createElement('canvas'); c.width=w; c.height=h;
+    c.getContext('2d').drawImage(video,0,0,w,h); mostrarFoto(c.toDataURL('image/jpeg',0.75));
   };
-  bOutra.onclick=function(){ st.foto=''; bAbrir.onclick(); };
+  // Plano B: abre o aplicativo de câmera do próprio aparelho (funciona em quase todo Android, inclusive dentro de apps)
+  bNativa.onclick=function(){ arq.value=''; arq.click(); };
+  arq.onchange=function(){
+    var f=arq.files && arq.files[0]; if(!f) return;
+    var url=URL.createObjectURL(f), im=new Image();
+    im.onload=function(){
+      var w=480, h=Math.round(480*im.naturalHeight/im.naturalWidth), c=document.createElement('canvas'); c.width=w; c.height=h;
+      c.getContext('2d').drawImage(im,0,0,w,h); URL.revokeObjectURL(url); mostrarFoto(c.toDataURL('image/jpeg',0.75));
+    };
+    im.onerror=function(){ URL.revokeObjectURL(url); msg.className='msg s-msg erro'; msg.textContent='Não conseguimos ler essa foto. Tente de novo.'; };
+    im.src=url;
+  };
+  bOutra.onclick=function(){ st.foto=''; if(st.falhou){ bNativa.onclick(); } else { bAbrir.onclick(); } };
   pular.onclick=function(e){ e.preventDefault(); st.pulou=true; parar(); msg.className='msg s-msg ok'; msg.textContent='Tudo bem, você pode continuar sem a foto.'; pular.classList.add('oculto'); };
   return st;
 }
