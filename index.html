@@ -852,10 +852,18 @@ function lerMensagem(txt){
     var ini=semAc(limpo).indexOf(m[0]); var linha=limpo.substr(ini, m[0].length); var pos=linha.length-m[1].length;
     return linha.slice(pos).trim();
   }
-  var r={ consultor:campo('consultor'), aluno:campo('aluno'), idade:(campo('idade').match(/\d+/)||[''])[0],
+  var r={ consultor:campo('consultora?'), aluno:campo('alun[oa]s?'), idade:(campo('idade').match(/\d+/)||[''])[0],
     plano:campo('plano'), formato:campo('formato'), duracao:(campo('duracao').match(/\d+/)||[''])[0],
-    aulas:(campo('aulas por semana').match(/\d+/)||[''])[0], valor:(campo('valor').match(/\d+(?:[.,]\d{1,2})?/)||[''])[0],
+    aulas:(campo('aulas (?:por semana|semanais)').match(/\d+/)||[''])[0], valor:(campo('valor').match(/\d+(?:[.,]\d{1,2})?/)||[''])[0],
     anuncio:(semAc(limpo).match(/anuncio\s*(\d+)/)||[,''])[1], data:'' };
+  // "Turma com 3 aulas semanais", "3x por semana"…
+  if(!r.aulas){ var ma=semAc(limpo).match(/(\d+)\s*(?:x|vezes|aulas?)\s*(?:por semana|semanais|semanal|na semana)/); if(ma) r.aulas=ma[1]; }
+  // Sem idade, calcula pela data de nascimento
+  if(!r.idade){
+    var mn=campo('(?:data de )?nascimento').match(/(\d{1,2})\s*\/\s*(\d{1,2})\s*\/\s*(\d{2,4})/);
+    if(mn){ var an=+mn[3]<100?(+mn[3]>30?1900:2000)+(+mn[3]):+mn[3], h=new Date(), id=h.getFullYear()-an;
+      if(h<new Date(h.getFullYear(),+mn[2]-1,+mn[1])) id--; if(id>0 && id<120) r.idade=String(id); }
+  }
   var dm=campo('1\\S*\\s*mensalidade');
   var d=semAc(dm), hoje=new Date(), dia, mes=-1, ano; hoje.setHours(0,0,0,0);
   var m1=d.match(/(\d{1,2})\s*\/\s*(\d{1,2})(?:\s*\/\s*(\d{2,4}))?/), m2=d.match(/(\d{1,2})\s*(?:de)?\s*([a-z]+)/);
