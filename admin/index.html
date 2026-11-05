@@ -313,8 +313,10 @@ function assinaturasHtml(d, cfg, assinaturaDataUrl, meta) {
     ? (esc_(d.pjRepNome || '') + ' – CPF: ' + esc_(d.pjRepCpf || '') + '<br>Representante legal de ' + esc_(d.pjRazao || '') + ' – CNPJ: ' + esc_(d.pjCnpj || ''))
     : (esc_(d.nome || '') + '<br>CPF: ' + esc_(d.cpf || ''));
   var img = assinaturaDataUrl
-    ? '<img src="' + assinaturaDataUrl + '" style="height:70px;max-width:260px;display:block">'
-    : '<div style="height:60px"></div>';
+    ? '<img src="' + assinaturaDataUrl + '" style="height:70px;max-width:260px;display:inline-block;vertical-align:bottom">'
+    : '<div style="height:60px;display:inline-block"></div>';
+  if (meta.selfie) img += '<img src="' + meta.selfie + '" style="height:90px;width:auto;border-radius:6px;margin-left:16px;display:inline-block;vertical-align:bottom">';
+  img = '<div>' + img + '</div>';
   var registro = meta.assinadoEm
     ? '<p class="ct-reg">Assinado eletronicamente em ' + esc_(meta.assinadoEm) +
       (meta.email ? ', com confirmação por código enviado para ' + esc_(meta.email) : '') +
@@ -324,6 +326,7 @@ function assinaturasHtml(d, cfg, assinaturaDataUrl, meta) {
       (meta.ip ? '<br>IP na assinatura: ' + esc_(meta.ip) : '') +
       (meta.dispositivo ? '<br>Dispositivo/navegador: ' + esc_(meta.dispositivo) : '') +
       (meta.comprovanteEm ? '<br>Cópia integral enviada ao e-mail do contratante em ' + esc_(meta.comprovanteEm) + '.' : '') +
+      (meta.selfie ? '<br>Foto do contratante registrada no momento da assinatura, com consentimento específico, exclusivamente para comprovar a assinatura (LGPD, art. 11, I).' : '') +
       '</p>'
     : '';
   if (meta.recibo) {
@@ -522,7 +525,7 @@ function desenharDetalhe(aviso, tipoAviso){
       '<textarea class="texto" data-k="texto" id="txtDet">'+esc_(o.texto)+'</textarea>'+
       '<div class="barra" style="margin-top:8px"><button class="b2" id="aPrev">Pré-visualizar como fica</button></div>'+
       '<div class="prev oculto" id="prevDet" style="margin-top:10px"></div></div>'+
-    '<div class="card assin"><h3>'+(ATUAL.ehRecibo?'Registro do envio':'Assinatura e provas')+'</h3>'+(ATUAL.assinatura?'<img src="'+ATUAL.assinatura+'">':(ATUAL.ehRecibo?'':'<span class="ajuda">Sem assinatura.</span>'))+
+    '<div class="card assin"><h3>'+(ATUAL.ehRecibo?'Registro do envio':'Assinatura e provas')+'</h3>'+(ATUAL.assinatura?'<img src="'+ATUAL.assinatura+'">':(ATUAL.ehRecibo?'':'<span class="ajuda">Sem assinatura.</span>'))+(ATUAL.selfie?' <img src="'+ATUAL.selfie+'" style="max-height:110px;border-radius:8px;margin-left:10px">':'')+
       '<div class="ajuda">Assinado em: <b>'+esc_(o.assinadoEm||'–')+'</b> · E-mail confirmado por código: <b>'+esc_(o.emailConfirmado||'–')+'</b> ('+esc_(o.email)+')'+
       '<br>Comprovante com a íntegra enviado ao aluno em: <b>'+esc_(o.comprovanteEm||'–')+'</b>'+
       '<br>IP: '+esc_(o.ip||'–')+' · Dispositivo: '+esc_(o.dispositivo||'–')+
