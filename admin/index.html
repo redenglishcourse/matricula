@@ -448,7 +448,7 @@ function desenharContadores(){
   var conta=function(f){ return LISTA.filter(f).length; };
   var itens=[
     ['Pendente','Aguardando aprovação',conta(function(c){ return c.status==='Pendente'; }),'var(--verm)'],
-    ['__NEG','Querem negociar',conta(function(c){ return !!c.negociar; }),'var(--azul)'],
+    ['__NEG','Com indicações',conta(function(c){ return c.indicacoes>0; }),'var(--azul)'],
     ['Aguardando novo aceite','Aguardando novo aceite',conta(function(c){ return c.status==='Aguardando novo aceite'; }),'var(--texto)'],
     ['Aprovado','Aprovados',conta(function(c){ return c.status==='Aprovado'; }),'var(--verde)']
   ];
@@ -467,14 +467,14 @@ function desenharLista(){
   var q=$('busca').value.trim().toLowerCase(), st=$('filtroStatus').value;
   desenharContadores();
   var l=LISTA.filter(function(c){
-    return (!SO_NEG || c.negociar) && (!st || c.status===st) && (!q || (c.nome+' '+c.aluno+' '+c.id).toLowerCase().indexOf(q)>=0);
+    return (!SO_NEG || c.indicacoes>0) && (!st || c.status===st) && (!q || (c.nome+' '+c.aluno+' '+c.id).toLowerCase().indexOf(q)>=0);
   });
   $('itens').innerHTML = l.length ? l.map(function(c){
     return '<div class="item'+(ATUAL&&ATUAL.obj.id===c.id?' sel':'')+'" data-id="'+esc_(c.id)+'">'+
       '<div class="n">'+esc_(c.nome)+'</div>'+
       '<div class="s">'+(c.aluno?'Aluno: '+esc_(c.aluno)+' · ':'')+esc_(c.plano)+'</div>'+
       '<div class="s">'+esc_(c.enviadoEm)+' · '+esc_(c.id)+'</div>'+
-      tagStatus(c.status)+(c.documento==='Recibo de pagamento'?' <span class="tag t-Enviado">sem compromisso</span>':'')+(c.negociar?' <span class="tag neg">quer negociar</span>':'')+'</div>';
+      tagStatus(c.status)+(c.documento==='Recibo de pagamento'?' <span class="tag t-Enviado">sem compromisso</span>':'')+(c.negociar?' <span class="tag neg">quer negociar</span>':'')+(c.indicacoes>0?' <span class="tag t-Aguardando">'+c.indicacoes+(c.indicacoes>1?' indicações':' indicação')+'</span>':'')+'</div>';
   }).join('') : '<div class="vazio">Nenhum contrato.</div>';
   document.querySelectorAll('.item').forEach(function(el){ el.addEventListener('click', function(){ abrir(el.dataset.id); }); });
 }
@@ -553,6 +553,10 @@ function desenharDetalhe(aviso, tipoAviso){
       '<button class="bx" id="aExcluir">Excluir</button>'+
     '</div></div>'+
     '<div class="msg" id="msgDet"></div>'+
+    (o.indicacoes ? '<div class="card"><h3>Indicações do aluno</h3>'+o.indicacoes.split(' | ').map(function(x){
+      var p=x.split(' – '), w=String(p[1]||'').replace(/\D/g,''); if(w && w.length<=11) w='55'+w;
+      return '<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid #EEF0F3"><span><b>'+esc_(p[0]||'')+'</b> · '+esc_(p[1]||'')+'</span>'+
+        (w?'<a class="b4" style="padding:6px 12px;border-radius:10px;text-decoration:none;font-weight:600;font-size:12.5px" target="_blank" rel="noopener" href="https://wa.me/'+w+'">WhatsApp</a>':'')+'</div>'; }).join('')+'</div>' : '')+
     (o.negociar ? '<div class="alerta"><b>O aluno quer negociar:</b> <span id="txtNeg">'+esc_(o.negociar)+'</span>'+
       '<div class="barra" style="margin-top:8px"><button class="b3 mini" id="negConcluir">✓ Negociação concluída</button><button class="b2 mini" id="negEditar">Editar</button><button class="bx mini" id="negRemover">Remover</button></div></div>' : '')+
     (reaceite ? '<div class="alerta">O contrato foi alterado e o aluno precisa assinar a nova versão.<div class="barra" style="margin-top:8px">'+
