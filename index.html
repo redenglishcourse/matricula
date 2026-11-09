@@ -47,9 +47,14 @@
   .opcao input{width:20px;height:20px;min-height:0;margin:0;accent-color:var(--verm);flex:none}
   .opcao.sel{border-color:var(--verm);background:var(--verm-claro);font-weight:600}
   .sub-tit{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--suave);margin:26px 0 2px;font-weight:600;padding-top:18px;border-top:1px solid #EEF0F3}
-  .indica{margin-top:26px;padding:14px;border-radius:12px;background:var(--azul-claro)}
-  .indica-tit{font-size:14px;font-weight:600;color:var(--azul)}.indica-tit span{font-weight:400;color:var(--suave);font-size:12.5px}
-  .indica-linha{display:grid;grid-template-columns:1.2fr 1fr;gap:8px;margin-top:8px}
+  .indica{margin:18px 0 6px;padding:14px;border-radius:12px;border:1.5px dashed #C9D3EA;background:#FAFBFD}
+  .indica-cab{display:flex;gap:10px;align-items:flex-start;color:var(--azul)}
+  .indica-cab svg{flex:none;margin-top:2px}
+  .indica-tit{font-size:15px;font-weight:700;color:var(--azul);line-height:1.3}
+  .indica-opc{font-size:12px;color:var(--suave)}
+  .indica-txt{margin:8px 0 10px;font-size:13px;color:var(--texto);line-height:1.5}
+  .indica-abrir{min-height:40px;padding:8px 14px;font-size:14px}
+  .indica-linha{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
   .indica-linha input{min-width:0;font-size:15px}
   .resumo{background:var(--fundo);border-radius:12px;padding:12px 14px;margin-top:12px;font-size:14.5px}
   /* Cartão "Seu plano" */
@@ -224,13 +229,6 @@
         </div>
         <p class="ajuda" style="margin:6px 0 0">As próximas parcelas vencem no mesmo dia dos meses seguintes.</p>
 
-        <div class="indica">
-          <div class="indica-tit">Programa de indicação <span>(opcional)</span></div>
-          <p class="ajuda" style="margin:2px 0 6px">Indique até 3 pessoas que têm interesse em aprender inglês.</p>
-          <div class="indica-linha"><input id="ind1n" placeholder="Nome" aria-label="Indicação 1 – nome" autocomplete="off"><input id="ind1w" placeholder="WhatsApp" aria-label="Indicação 1 – WhatsApp" inputmode="tel" autocomplete="off"></div>
-          <div class="indica-linha"><input id="ind2n" placeholder="Nome" aria-label="Indicação 2 – nome" autocomplete="off"><input id="ind2w" placeholder="WhatsApp" aria-label="Indicação 2 – WhatsApp" inputmode="tel" autocomplete="off"></div>
-          <div class="indica-linha"><input id="ind3n" placeholder="Nome" aria-label="Indicação 3 – nome" autocomplete="off"><input id="ind3w" placeholder="WhatsApp" aria-label="Indicação 3 – WhatsApp" inputmode="tel" autocomplete="off"></div>
-        </div>
       </div>
     </div>
 
@@ -257,6 +255,20 @@
       <label class="check"><input type="checkbox" id="concordo"> <span id="txtConcordo">Li (ou ouvi) o contrato, entendi e concordo com todas as cláusulas.</span></label>
       <div id="areaAssinatura"></div>
       <div id="areaCodigo"></div>
+      <div class="indica" id="blocoIndica">
+        <div class="indica-cab">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="13" rx="2"></rect><path d="M3 12h18M12 8v13M12 8c-1.5-3-5-3.5-5-1.2C7 8 9.5 8 12 8zm0 0c1.5-3 5-3.5 5-1.2C17 8 14.5 8 12 8z"></path></svg>
+          <div><div class="indica-tit" id="indTitulo">Indique 3 amigos e ganhe até R$&nbsp;75 de desconto</div>
+          <div class="indica-opc">Opcional · sem compromisso</div></div>
+        </div>
+        <p class="indica-txt" id="indTexto">Para cada amigo indicado que se matricular e pagar a 1ª mensalidade, você ganha R$&nbsp;25 de desconto na sua mensalidade seguinte.</p>
+        <button type="button" class="btn2 indica-abrir" id="indAbrir" aria-expanded="false" aria-controls="indCampos">Quero indicar</button>
+        <div id="indCampos" class="oculto">
+          <div class="indica-linha"><input id="ind1n" placeholder="Nome" aria-label="Amigo 1 – nome" autocomplete="off"><input id="ind1w" placeholder="WhatsApp" aria-label="Amigo 1 – WhatsApp" inputmode="tel" autocomplete="off"></div>
+          <div class="indica-linha"><input id="ind2n" placeholder="Nome" aria-label="Amigo 2 – nome" autocomplete="off"><input id="ind2w" placeholder="WhatsApp" aria-label="Amigo 2 – WhatsApp" inputmode="tel" autocomplete="off"></div>
+          <div class="indica-linha"><input id="ind3n" placeholder="Nome" aria-label="Amigo 3 – nome" autocomplete="off"><input id="ind3w" placeholder="WhatsApp" aria-label="Amigo 3 – WhatsApp" inputmode="tel" autocomplete="off"></div>
+        </div>
+      </div>
       <button class="btn btn-grande" id="btnEnviar">Assinar e enviar contrato</button>
       <div class="msg" id="msgEnviar"></div>
     </div>
@@ -719,6 +731,11 @@ function criarSelfie(alvo, chave){
   return st;
 }
 /* ---------- Programa de indicação (opcional) ---------- */
+function textosIndicacao(cfg){
+  var nb=function(t){ return String(t).replace(/R\$\s+(?=\d)/g,'R$\u00a0'); };
+  if(cfg && cfg.indicacao_titulo) $('indTitulo').textContent=nb(cfg.indicacao_titulo);
+  if(cfg && cfg.indicacao_texto) $('indTexto').textContent=nb(cfg.indicacao_texto);
+}
 function lerIndicacoes(){
   var l=[]; [1,2,3].forEach(function(i){ var n=$('ind'+i+'n').value.trim(), w=$('ind'+i+'w').value.trim(); if(n||w) l.push({ nome:n.slice(0,80), whatsapp:w.slice(0,25) }); });
   return l;
@@ -729,6 +746,7 @@ function checarIndicacoes(){
     else if(!n && w) e='Indicação '+i+': informe o nome (ou apague o WhatsApp).'; });
   return e;
 }
+$('indAbrir').addEventListener('click', function(){ $('indCampos').classList.remove('oculto'); this.classList.add('oculto'); this.setAttribute('aria-expanded','true'); $('ind1n').focus(); });
 [1,2,3].forEach(function(i){ $('ind'+i+'w').addEventListener('input', function(){ var el=this, d=el.value.replace(/\D/g,'').slice(0,11);
   el.value = d.length>6 ? '('+d.slice(0,2)+') '+d.slice(2,d.length-4)+'-'+d.slice(-4) : d.length>2 ? '('+d.slice(0,2)+') '+d.slice(2) : d; }); });
 function checarSelfie(chave){
@@ -817,6 +835,7 @@ function atualizarPlano(){
   $('audios').classList.toggle('oculto', f || !D.audios.length);
   $('txtConcordo').textContent = f ? 'Confirmo que meus dados estão corretos e que fiz o pagamento via PIX.' : 'Li (ou ouvi) o contrato, entendi e concordo com todas as cláusulas.';
   $('btnEnviar').textContent = f ? 'Enviar comprovante' : 'Assinar e enviar contrato';
+  $('blocoIndica').classList.toggle('oculto', f);
   atualizarContrato();
 }
 
@@ -861,6 +880,7 @@ function validar(o){
 function iniciarForm(){
   $('plano').innerHTML = '<option value="">Selecione…</option>' + D.planos.map(function(p){ return '<option value="'+esc_(p.id)+'">'+esc_(p.nome)+'</option>'; }).join('');
   var formas = D.cfg.formas_pagamento.length ? D.cfg.formas_pagamento : ['PIX'];
+  textosIndicacao(D.cfg);
   $('formaPagamento').innerHTML = (formas.length>1?'<option value="">Selecione…</option>':'') + formas.map(function(d){ return '<option>'+esc_(d)+'</option>'; }).join('');
   if(formas.length===1){ $('formaPagamento').value=formas[0]; $('campoForma').classList.add('oculto'); }
   $('pixChave').textContent = D.cfg.pix_chave || '';
@@ -897,7 +917,7 @@ function iniciarForm(){
     if(!erro && !$('concordo').checked) erro='Marque que leu e concorda com o contrato.';
     var recibo = ehRecibo();
     var arq = $('comprovante').files[0];
-    if(!erro) erro=checarIndicacoes();
+    if(!erro && !ehRecibo()) erro=checarIndicacoes();
     if(!erro && recibo && !arq) erro='Anexe o comprovante do PIX.';
     if(!erro && recibo && arq.size > 8*1024*1024) erro='O comprovante é muito grande (máximo 8 MB).';
     if(!erro && !recibo && pads.form.vazia()) erro='Faça sua assinatura no quadro.';
@@ -905,7 +925,7 @@ function iniciarForm(){
     if(!erro && D.cfg.exigir_codigo && !/^\d{6}$/.test(cod)) erro='Digite o código de 6 números enviado para o seu e-mail.';
     if(erro) return mostrarMsg('msgEnviar', erro);
     if(PROPOSTA) o.proposta=PARAMS.proposta;
-    o.indicacoes=lerIndicacoes();
+    o.indicacoes=ehRecibo() ? [] : lerIndicacoes();
     o.concordo=true; o.codigo=cod; o.ip=IP; o.dispositivo=navigator.userAgent; o.negociar='';
     if(!recibo) o.assinatura=pads.form.imagem();
     var b=$('btnEnviar'); b.disabled=true; b.textContent='Enviando…';
