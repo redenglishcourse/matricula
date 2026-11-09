@@ -19,14 +19,14 @@
   .topo img{height:40px;width:auto;display:block}
   .topo .sub{font-size:12px;font-weight:500;color:var(--suave)}
   .topo-in{width:100%;max-width:820px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
-  .hero{background:var(--verm);color:#fff;padding:28px 16px 0;overflow:hidden}
+  .hero{background:var(--verm);color:#fff;padding:22px 16px 0;overflow:hidden}
   .hero-in{max-width:820px;margin:0 auto;display:flex;flex-direction:column;gap:6px}
   .hero .kicker{margin:0;font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#FFD27A}
-  .hero h1{margin:0;font-size:26px;line-height:1.2;font-weight:700}
+  .hero h1{margin:0;font-size:23px;line-height:1.25;font-weight:700}
   .hero p{margin:0;font-size:14px;color:#FFE9EA}
-  .hero .sky{display:block;width:100%;max-width:640px;height:auto;margin:14px auto 0;opacity:.35}
+  .hero .sky{display:block;width:100%;max-width:560px;height:auto;margin:10px auto 0;opacity:.25}
   main{flex:1 0 auto;width:100%;max-width:820px;margin:-18px auto 0;padding:0 16px 16px;position:relative}
-  .card{background:#fff;border:0;border-radius:16px;padding:18px;margin-bottom:16px;box-shadow:0 1px 3px rgba(15,45,107,.06)}
+  .card{background:#fff;border:0;border-radius:16px;padding:20px 18px;margin-bottom:14px;box-shadow:none}
   h2{font-size:18px;margin:0 0 4px;color:var(--azul);font-weight:600;display:flex;align-items:center}
   .passo{display:inline-flex;align-items:center;justify-content:center;background:var(--verm);color:#fff;border-radius:50%;width:28px;height:28px;font-size:14px;margin-right:10px;flex:none}
   .ajuda{color:var(--suave);font-size:13.5px;margin:0 0 14px}
@@ -46,10 +46,14 @@
   .opcao{border:1.5px solid var(--borda);border-radius:12px;padding:12px 14px;cursor:pointer;font-size:14.5px;font-weight:500;display:flex;gap:10px;align-items:center;margin:0;min-height:50px}
   .opcao input{width:20px;height:20px;min-height:0;margin:0;accent-color:var(--verm);flex:none}
   .opcao.sel{border-color:var(--verm);background:var(--verm-claro);font-weight:600}
-  .sub-tit{font-size:12.5px;text-transform:uppercase;letter-spacing:1px;color:var(--verm);margin:24px 0 0;font-weight:600}
+  .sub-tit{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--suave);margin:26px 0 2px;font-weight:600;padding-top:18px;border-top:1px solid #EEF0F3}
+  .indica{margin-top:26px;padding:14px;border-radius:12px;background:var(--azul-claro)}
+  .indica-tit{font-size:14px;font-weight:600;color:var(--azul)}.indica-tit span{font-weight:400;color:var(--suave);font-size:12.5px}
+  .indica-linha{display:grid;grid-template-columns:1.2fr 1fr;gap:8px;margin-top:8px}
+  .indica-linha input{min-width:0;font-size:15px}
   .resumo{background:var(--fundo);border-radius:12px;padding:12px 14px;margin-top:12px;font-size:14.5px}
   /* Cartão "Seu plano" */
-  .plano-card{box-shadow:0 6px 20px rgba(15,45,107,.10)}
+  .plano-card{box-shadow:0 4px 16px rgba(15,45,107,.08)}
   .plano-topo{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
   .plano-rot{font-size:12px;font-weight:600;color:var(--azul);text-transform:uppercase;letter-spacing:1px}
   .selo{font-size:11px;font-weight:600;background:var(--amarelo);color:var(--texto);padding:4px 10px;border-radius:999px}
@@ -152,12 +156,6 @@
   <div id="telaForm" class="oculto">
     <div class="card plano-card oculto" id="cardPlano"></div>
     <div class="card ola oculto" id="caixaProposta"></div>
-    <nav class="etapas" id="etapas" aria-label="Etapas">
-      <div class="etapa on" data-e="1"><span class="n">1</span><span>Dados</span></div><div class="traco"></div>
-      <div class="etapa" data-e="2"><span class="n">2</span><span id="etapa2Nome">Contrato</span></div><div class="traco"></div>
-      <div class="etapa" data-e="3"><span class="n">3</span><span id="etapa3Nome">Assinar</span></div>
-    </nav>
-    <div class="card aviso" id="avisoNeg"></div>
 
     <div class="card">
       <h2><span class="passo">1</span>Seus dados</h2>
@@ -226,12 +224,12 @@
         </div>
         <p class="ajuda" style="margin:6px 0 0">As próximas parcelas vencem no mesmo dia dos meses seguintes.</p>
 
-        <div class="sub-tit">Sobre você (opcional)</div>
-        <div class="grade">
-          <div><label for="sexo">Sexo</label><select id="sexo" data-campo><option value="">Prefiro não informar</option><option>Feminino</option><option>Masculino</option></select></div>
-          <div><label for="instagram">Instagram</label><input id="instagram" data-campo placeholder="@seuperfil"></div>
-          <div><label for="conheceu">Onde conheceu a R.E.D.?</label><select id="conheceu" data-campo></select></div>
-          <div><label for="interesse">Qual o seu interesse em aprender inglês?</label><input id="interesse" data-campo placeholder="Ex.: trabalho, viagem, estudos"></div>
+        <div class="indica">
+          <div class="indica-tit">Programa de indicação <span>(opcional)</span></div>
+          <p class="ajuda" style="margin:2px 0 6px">Indique até 3 pessoas que têm interesse em aprender inglês.</p>
+          <div class="indica-linha"><input id="ind1n" placeholder="Nome" aria-label="Indicação 1 – nome" autocomplete="off"><input id="ind1w" placeholder="WhatsApp" aria-label="Indicação 1 – WhatsApp" inputmode="tel" autocomplete="off"></div>
+          <div class="indica-linha"><input id="ind2n" placeholder="Nome" aria-label="Indicação 2 – nome" autocomplete="off"><input id="ind2w" placeholder="WhatsApp" aria-label="Indicação 2 – WhatsApp" inputmode="tel" autocomplete="off"></div>
+          <div class="indica-linha"><input id="ind3n" placeholder="Nome" aria-label="Indicação 3 – nome" autocomplete="off"><input id="ind3w" placeholder="WhatsApp" aria-label="Indicação 3 – WhatsApp" inputmode="tel" autocomplete="off"></div>
         </div>
       </div>
     </div>
@@ -252,15 +250,11 @@
       </div>
       <div class="contrato" id="contrato"></div>
       <div class="audios" id="audios"></div>
-      <div id="blocoNegociar"><label for="negociar">Quer negociar alguma cláusula? (opcional)</label>
-      <textarea id="negociar" rows="2" placeholder="Escreva aqui, se quiser"></textarea>
-      <p class="ajuda" style="margin-top:6px">Se escrever aqui, um colaborador vai falar com você antes de aprovar o contrato.</p></div>
     </div>
 
     <div class="card oculto" id="cardAssinar">
       <h2><span class="passo">3</span><span id="titPasso3">Assinatura</span></h2>
       <label class="check"><input type="checkbox" id="concordo"> <span id="txtConcordo">Li (ou ouvi) o contrato, entendi e concordo com todas as cláusulas.</span></label>
-      <div id="areaSelfie"></div>
       <div id="areaAssinatura"></div>
       <div id="areaCodigo"></div>
       <button class="btn btn-grande" id="btnEnviar">Assinar e enviar contrato</button>
@@ -270,7 +264,6 @@
 
   <!-- ===================== NOVO ACEITE ===================== -->
   <div id="telaAceite" class="oculto">
-    <div class="card aviso" id="avisoNeg2"></div>
     <div class="card">
       <h2>Nova versão do seu contrato</h2>
       <p class="ajuda" id="aceiteOla"></p>
@@ -280,7 +273,6 @@
     <div class="card">
       <h2>Assinatura</h2>
       <label class="check"><input type="checkbox" id="concordo2"> Li (ou ouvi) a nova versão do contrato e concordo com todas as cláusulas.</label>
-      <div id="areaSelfie2"></div>
       <div id="areaAssinatura2"></div>
       <div id="areaCodigo2"></div>
       <button class="btn btn-grande" id="btnAceite">Assinar nova versão</button>
@@ -726,6 +718,19 @@ function criarSelfie(alvo, chave){
   pular.onclick=function(e){ e.preventDefault(); st.pulou=true; parar(); msg.className='msg s-msg ok'; msg.textContent='Tudo bem, você pode continuar sem a foto.'; pular.classList.add('oculto'); };
   return st;
 }
+/* ---------- Programa de indicação (opcional) ---------- */
+function lerIndicacoes(){
+  var l=[]; [1,2,3].forEach(function(i){ var n=$('ind'+i+'n').value.trim(), w=$('ind'+i+'w').value.trim(); if(n||w) l.push({ nome:n.slice(0,80), whatsapp:w.slice(0,25) }); });
+  return l;
+}
+function checarIndicacoes(){
+  var e=''; [1,2,3].forEach(function(i){ if(e) return; var n=$('ind'+i+'n').value.trim(), w=$('ind'+i+'w').value.replace(/\D/g,'');
+    if(n && w.length<10) e='Indicação '+i+': informe o WhatsApp com DDD (ou apague o nome).';
+    else if(!n && w) e='Indicação '+i+': informe o nome (ou apague o WhatsApp).'; });
+  return e;
+}
+[1,2,3].forEach(function(i){ $('ind'+i+'w').addEventListener('input', function(){ var el=this, d=el.value.replace(/\D/g,'').slice(0,11);
+  el.value = d.length>6 ? '('+d.slice(0,2)+') '+d.slice(2,d.length-4)+'-'+d.slice(-4) : d.length>2 ? '('+d.slice(0,2)+') '+d.slice(2) : d; }); });
 function checarSelfie(chave){
   var st=selfies[chave]; if(!st) return '';
   if(st.foto || st.pulou) return '';
@@ -792,14 +797,6 @@ function mostrarPlanoCard(){
     (PROPOSTA && PROPOSTA.consultor ? '<p class="plano-cons">Consultor: '+esc_(PROPOSTA.consultor)+'</p>' : '');
   box.classList.remove('oculto');
 }
-function atualizarEtapas(){
-  var cards=[['blocoCampos',1],['cardContrato',2],['cardAssinar',3]], atual=1, lim=window.innerHeight*0.45;
-  cards.forEach(function(c){ var el=$(c[0]); if(el && !el.classList.contains('oculto') && el.getBoundingClientRect().top < lim) atual=c[1]; });
-  if($('concordo').checked) atual=3;
-  document.querySelectorAll('#etapas .etapa').forEach(function(e){ var n=+e.dataset.e; e.classList.toggle('on', n===atual); e.classList.toggle('ok', n<atual); });
-}
-window.addEventListener('scroll', function(){ if(!$('telaForm').classList.contains('oculto')) atualizarEtapas(); }, {passive:true});
-$('concordo').addEventListener('change', atualizarEtapas);
 $('primeiroPagamento').addEventListener('input', function(){ if(!PROPOSTA) mostrarPlanoCard(); });
 
 function atualizarPlano(){
@@ -817,8 +814,6 @@ function atualizarPlano(){
   $('areaAssinatura').classList.toggle('oculto', f);
   $('lblPagamento').textContent = f ? 'Data em que fez o PIX' : 'Data do primeiro pagamento';
   $('titDoc').textContent = f ? 'Pague via PIX e anexe o comprovante' : 'Leia o contrato';
-  $('etapa2Nome').textContent = f ? 'Pagamento' : 'Contrato'; $('etapa3Nome').textContent = f ? 'Enviar' : 'Assinar';
-  $('blocoNegociar').classList.toggle('oculto', f);
   $('audios').classList.toggle('oculto', f || !D.audios.length);
   $('txtConcordo').textContent = f ? 'Confirmo que meus dados estão corretos e que fiz o pagamento via PIX.' : 'Li (ou ouvi) o contrato, entendi e concordo com todas as cláusulas.';
   $('btnEnviar').textContent = f ? 'Enviar comprovante' : 'Assinar e enviar contrato';
@@ -864,9 +859,7 @@ function validar(o){
 }
 
 function iniciarForm(){
-  $('avisoNeg').innerHTML = '<b>Este contrato pode ser negociado.</b> '+esc_(D.cfg.msg_negociacao||'').replace(/^Este contrato pode ser negociado\.\s*/,'');
   $('plano').innerHTML = '<option value="">Selecione…</option>' + D.planos.map(function(p){ return '<option value="'+esc_(p.id)+'">'+esc_(p.nome)+'</option>'; }).join('');
-  $('conheceu').innerHTML = '<option value="">Selecione…</option>' + D.cfg.opcoes_conheceu.map(function(d){ return '<option>'+esc_(d)+'</option>'; }).join('');
   var formas = D.cfg.formas_pagamento.length ? D.cfg.formas_pagamento : ['PIX'];
   $('formaPagamento').innerHTML = (formas.length>1?'<option value="">Selecione…</option>':'') + formas.map(function(d){ return '<option>'+esc_(d)+'</option>'; }).join('');
   if(formas.length===1){ $('formaPagamento').value=formas[0]; $('campoForma').classList.add('oculto'); }
@@ -888,7 +881,6 @@ function iniciarForm(){
   if(PARAMS.tipo){ var r=document.querySelector('input[name=tipo][value="'+PARAMS.tipo+'"]'); if(r) r.checked=true; }
   atualizarTipo(); atualizarPlano();
 
-  criarSelfie('areaSelfie','form');
   criarAssinatura('areaAssinatura','form');
   if(D.cfg.exigir_codigo){
     lerCodigo = criarCodigo('areaCodigo','o e-mail informado acima', function(){
@@ -905,16 +897,16 @@ function iniciarForm(){
     if(!erro && !$('concordo').checked) erro='Marque que leu e concorda com o contrato.';
     var recibo = ehRecibo();
     var arq = $('comprovante').files[0];
+    if(!erro) erro=checarIndicacoes();
     if(!erro && recibo && !arq) erro='Anexe o comprovante do PIX.';
     if(!erro && recibo && arq.size > 8*1024*1024) erro='O comprovante é muito grande (máximo 8 MB).';
-    if(!erro) erro=checarSelfie('form');
     if(!erro && !recibo && pads.form.vazia()) erro='Faça sua assinatura no quadro.';
     var cod=lerCodigo();
     if(!erro && D.cfg.exigir_codigo && !/^\d{6}$/.test(cod)) erro='Digite o código de 6 números enviado para o seu e-mail.';
     if(erro) return mostrarMsg('msgEnviar', erro);
     if(PROPOSTA) o.proposta=PARAMS.proposta;
-    if(selfies.form && selfies.form.foto) o.selfie=selfies.form.foto;
-    o.concordo=true; o.codigo=cod; o.ip=IP; o.dispositivo=navigator.userAgent; o.negociar=recibo ? '' : $('negociar').value.trim();
+    o.indicacoes=lerIndicacoes();
+    o.concordo=true; o.codigo=cod; o.ip=IP; o.dispositivo=navigator.userAgent; o.negociar='';
     if(!recibo) o.assinatura=pads.form.imagem();
     var b=$('btnEnviar'); b.disabled=true; b.textContent='Enviando…';
     lerArquivo(recibo ? arq : null).then(function(dados){
@@ -937,23 +929,20 @@ function iniciarAceite(){
   run('getAceite', PARAMS.aceite, PARAMS.token).then(function(r){
     $('subtitulo').textContent='Nova versão do contrato';
     $('heroTitulo').textContent='Seu contrato foi atualizado.'; $('heroTexto').textContent='Leia a nova versão e assine para concluir.';
-    $('avisoNeg2').innerHTML = '<b>Este contrato pode ser negociado.</b> '+esc_(r.cfg.msg_negociacao||'').replace(/^Este contrato pode ser negociado\.\s*/,'');
     $('aceiteOla').textContent = 'Olá, '+r.nome+'. O contrato foi atualizado conforme combinado com nossa equipe. Leia ou ouça a versão abaixo e assine para concluir.';
     mostrarAudios('audios2', r.audios);
     $('contrato2').innerHTML = r.html;
-    criarSelfie('areaSelfie2','aceite');
     criarAssinatura('areaAssinatura2','aceite');
     var ler = r.cfg.exigir_codigo ? criarCodigo('areaCodigo2', esc_(r.email), function(){ return run('enviarCodigoAceite', PARAMS.aceite, PARAMS.token); }) : function(){ return ''; };
     $('btnAceite').addEventListener('click', function(){
       limparMsg('msgAceite');
       var erro='';
       if(!$('concordo2').checked) erro='Marque que leu e concorda com a nova versão.';
-      else if(checarSelfie('aceite')) erro=checarSelfie('aceite');
       else if(pads.aceite.vazia()) erro='Faça sua assinatura no quadro.';
       else if(r.cfg.exigir_codigo && !/^\d{6}$/.test(ler())) erro='Digite o código de 6 números enviado para o seu e-mail.';
       if(erro) return mostrarMsg('msgAceite', erro);
       var b=$('btnAceite'); b.disabled=true; b.textContent='Enviando…';
-      run('confirmarAceite', PARAMS.aceite, PARAMS.token, pads.aceite.imagem(), ler(), {ip:IP, dispositivo:navigator.userAgent, selfie:(selfies.aceite&&selfies.aceite.foto)||''}).then(function(){
+      run('confirmarAceite', PARAMS.aceite, PARAMS.token, pads.aceite.imagem(), ler(), {ip:IP, dispositivo:navigator.userAgent}).then(function(){
         fim('<div class="icone">✅</div><h2>Nova versão assinada!</h2><p>Obrigado. Em breve você receberá o contrato final por e-mail e WhatsApp.</p>');
       }).catch(function(e){ mostrarMsg('msgAceite', e.message); b.disabled=false; b.textContent='Assinar nova versão'; });
     });
