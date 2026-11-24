@@ -574,8 +574,8 @@ function idade(v){ var m=v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/); var n=new Date(
 function criarAssinatura(alvo, chave){
   $(alvo).innerHTML =
     '<label>Assine com o dedo (celular) ou com o mouse (computador)</label>'+
-    '<p class="ajuda" style="margin:0 0 6px">Ao assinar, registramos data, hora e dispositivo, e enviamos uma cópia do documento para o seu e-mail.</p>'+
-    '<div class="assin"><canvas></canvas><div class="base"></div><div class="dica">assine aqui</div></div>'+
+    '<p class="ajuda" style="margin:0 0 6px"><b style="color:var(--azul)">Faça a assinatura igual (ou o mais parecida possível) à do seu RG.</b> Ao assinar, registramos data, hora e dispositivo, e enviamos uma cópia do documento para o seu e-mail.</p>'+
+    '<div class="assin"><canvas></canvas><div class="base"></div><div class="dica">assine aqui, como no seu RG</div></div>'+
     '<div class="linha-botoes"><button type="button" class="btn2">Limpar assinatura</button></div>';
   var box=$(alvo).querySelector('.assin'), cv=box.querySelector('canvas'), dica=box.querySelector('.dica');
   var ctx=cv.getContext('2d'), desenhando=false, tinta=0, ult=null;
