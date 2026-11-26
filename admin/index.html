@@ -423,9 +423,30 @@ function run(fn){
 }
 var TOKEN = null;
 try { TOKEN = sessionStorage.getItem('tk_contratos'); } catch(e) {}
+/* Antes de mexer no contrato aberto, confere se outro administrador mexeu nele.
+   Se mexeu, não faz a ação: atualiza a tela e avisa. */
+var SO_LEITURA = ['admObter','admPreview','admEstado','admListar','admInicio','admLogin','admModelos','admTextoVersao','admPastas'];
+var FP_ESPERA = null;
+function noContratoAberto(fn, args){ return ATUAL && ATUAL.obj && args[0]===ATUAL.obj.id && SO_LEITURA.indexOf(fn)<0; }
 function adm(fn){
   var args = Array.prototype.slice.call(arguments, 1);
-  return run.apply(null, [fn, TOKEN].concat(args)).catch(function(e){
+  var conferir = noContratoAberto(fn, args);
+  var id = conferir ? ATUAL.obj.id : null;
+  var antes = !conferir ? Promise.resolve() : (FP_ESPERA||Promise.resolve()).then(function(){
+    return run('admEstado', TOKEN, id).then(function(e){
+      if(ATUAL && ATUAL.obj.id===id && ATUAL.fp && e.fp!==ATUAL.fp){
+        var texto='Este contrato foi alterado por outro administrador (status agora: '+e.status+'). Já atualizei a tela para você: confira antes de continuar.';
+        return recarregar(id).then(function(){ throw new Error(texto); });
+      }
+    });
+  });
+  return antes.then(function(){ return run.apply(null, [fn, TOKEN].concat(args)); }).then(function(r){
+    if(conferir){
+      // A própria ação mudou o contrato: guarda a nova impressão para não confundir com outro admin.
+      FP_ESPERA = run('admEstado', TOKEN, id).then(function(e){ if(ATUAL && ATUAL.obj.id===id) ATUAL.fp=e.fp; }).catch(function(){});
+    }
+    return r;
+  }).catch(function(e){
     if(String(e.message).indexOf('SESSAO')===0){ mostrarLogin('Sua sessão expirou. Entre de novo.'); }
     throw new Error(String(e.message).replace(/^SESSAO:\s*/,''));
   });
@@ -531,6 +552,23 @@ function abrir(id){
 function recarregar(id, aviso, tipo){
   return adm('admObter', id).then(function(r){ ATUAL=r; desenharDetalhe(aviso, tipo); carregarLista(); });
 }
+
+/* Atualização automática: a cada 1 minuto e quando você volta para a aba do painel.
+   O contrato aberto só é recarregado se ninguém estiver digitando nele. */
+var EDITANDO=false;
+document.addEventListener('input', function(ev){ if(ev.target.closest && ev.target.closest('#detalhe')) EDITANDO=true; });
+function atualizarSozinho(){
+  if(!TOKEN || document.hidden || !$('login').classList.contains('oculto')) return;
+  adm('admListar').then(function(l){ LISTA=l; desenharLista(); }).catch(function(){});
+  if(!ATUAL || EDITANDO || document.querySelector('#detalhe button[data-trava]')) return;
+  var id=ATUAL.obj.id;
+  run('admEstado', TOKEN, id).then(function(e){
+    if(ATUAL && ATUAL.obj.id===id && ATUAL.fp && e.fp!==ATUAL.fp && !EDITANDO)
+      recarregar(id, 'Este contrato foi atualizado por outro administrador.', 'info');
+  }).catch(function(){});
+}
+setInterval(atualizarSozinho, 60000);
+document.addEventListener('visibilitychange', function(){ if(!document.hidden) atualizarSozinho(); });
 function receitaHtml(){
   var pend = ATUAL.cpfs.filter(function(c){ return c.situacao!=='Regular'; }).length;
   var linhas = ATUAL.cpfs.map(function(c){
@@ -553,7 +591,44 @@ function receitaHtml(){
     '<p class="ajuda" style="margin-top:0">Copie o CPF e a data, abra o site da Receita, resolva o "não sou um robô" e marque aqui o resultado. '+
     (pend?'<b>O contrato só pode ser aprovado quando todos estiverem como Regular.</b>':'<b style="color:#166534">Tudo conferido ✓</b>')+'</p>'+linhas+cnpj+'</div>';
 }
+function versaoAnteriorHtml(o, reaceite){
+  var quando=esc_(o.versaoAnteriorAssinadoEm||o.assinadoEm||'–');
+  var motivo=o.versaoAnteriorMotivo?' Motivo: '+esc_(o.versaoAnteriorMotivo)+'.':'';
+  var pdf=o.versaoAnteriorPdfId?' <a href="https://drive.google.com/file/d/'+esc_(o.versaoAnteriorPdfId)+'/view" target="_blank" rel="noopener">Abrir PDF da versão anterior</a>':'';
+  if(reaceite && ATUAL.assinatura){
+    var h='<div style="background:#FDF1D6;color:#7A4F00;border:1px solid #F4B63C;border-radius:10px;padding:10px 12px;margin-bottom:10px">⚠️ <b>Aguardando nova assinatura.</b> A assinatura abaixo é da <b>versão anterior</b> (assinada em '+quando+') e não vale para o contrato alterado.'+
+      (o.versaoAnterior?'<br><b>'+esc_(o.versaoAnterior)+'.</b>'+motivo+pdf:'')+'</div>';
+    if(!o.versaoAnterior) h+='<div class="barra" style="margin-bottom:10px;align-items:center"><span class="ajuda" style="margin:0">Por que a versão anterior foi alterada?</span>'+
+      '<input id="vMotivo" placeholder="Motivo (opcional)" style="flex:1;min-width:180px">'+
+      '<button class="b2 mini" data-vtipo="erro">Foi um erro</button><button class="b2 mini" data-vtipo="mudanca">Foi mudança combinada</button></div>';
+    return h;
+  }
+  if(o.versaoAnterior) return '<div class="ajuda" style="margin:0 0 10px">Versão anterior (assinada em '+quando+'): <b>'+esc_(o.versaoAnterior)+'</b>.'+motivo+pdf+'</div>';
+  return '';
+}
+function pedirMotivoVersao(o, coletar, botaoSalvar){
+  var box=$('motivoVersao');
+  if(!box){ box=document.createElement('div'); box.id='motivoVersao'; $('msgDet').insertAdjacentElement('afterend', box); }
+  box.innerHTML='<div class="card" style="box-shadow:0 0 0 2px #F4B63C;margin-bottom:12px">'+
+    '<h3>Este contrato já foi assinado. Por que está alterando?</h3>'+
+    '<label style="display:flex;gap:10px;align-items:flex-start;margin:8px 0;cursor:pointer"><input type="radio" name="vtipo" value="erro" style="width:auto;margin-top:4px"><span><b>Corrigir um erro</b><br><span class="ajuda" style="margin:0">Ex.: a versão errada foi enviada. A versão anterior fica marcada como cancelada por erro.</span></span></label>'+
+    '<label style="display:flex;gap:10px;align-items:flex-start;margin:8px 0;cursor:pointer"><input type="radio" name="vtipo" value="mudanca" style="width:auto;margin-top:4px"><span><b>Mudança combinada com o aluno</b><br><span class="ajuda" style="margin:0">Ex.: troca de pacote. O PDF anterior fica guardado na pasta "Versões anteriores".</span></span></label>'+
+    '<input id="vMotivoSalvar" placeholder="Motivo (opcional). Ex.: era pacote personalizado" style="margin:6px 0 10px">'+
+    '<div class="barra"><button class="b1" id="vConfirmar">Confirmar e salvar</button><button class="b2" id="vCancelar">Cancelar</button></div><div class="msg" id="msgVersao"></div></div>';
+  box.scrollIntoView({behavior:'smooth', block:'center'});
+  $('vCancelar').onclick=function(){ box.innerHTML=''; };
+  $('vConfirmar').onclick=function(){
+    var esc=document.querySelector('input[name="vtipo"]:checked');
+    if(!esc){ msg('msgVersao','Escolha uma das duas opções.','erro'); return; }
+    var c=coletar(); c.__versaoTipo=esc.value; c.__versaoMotivo=$('vMotivoSalvar').value;
+    this.disabled=true; this.textContent='Salvando…';
+    adm('admSalvar', o.id, c).then(function(r){ return recarregar(o.id, r.aviso, 'info'); })
+      .catch(function(e){ $('vConfirmar').disabled=false; $('vConfirmar').textContent='Confirmar e salvar'; msg('msgVersao', e.message, 'erro'); });
+  };
+}
+
 function desenharDetalhe(aviso, tipoAviso){
+  EDITANDO=false;
   var o=ATUAL.obj, st=o.status;
   var reaceite = st==='Aguardando novo aceite';
   var temPdf = !!o.pdfId;
@@ -593,7 +668,7 @@ function desenharDetalhe(aviso, tipoAviso){
       '<textarea class="texto" data-k="texto" id="txtDet">'+esc_(o.texto)+'</textarea>'+
       '<div class="barra" style="margin-top:8px"><button class="b2" id="aPrev">Pré-visualizar como fica</button></div>'+
       '<div class="prev oculto" id="prevDet" style="margin-top:10px"></div></div>'+
-    '<div class="card assin"><h3>'+(ATUAL.ehRecibo?'Registro do envio':'Assinatura e provas')+'</h3>'+(ATUAL.assinatura?'<img src="'+ATUAL.assinatura+'">':(ATUAL.ehRecibo?'':'<span class="ajuda">Sem assinatura.</span>'))+(ATUAL.selfie?' <img src="'+ATUAL.selfie+'" style="max-height:110px;border-radius:8px;margin-left:10px">':'')+
+    '<div class="card assin"><h3>'+(ATUAL.ehRecibo?'Registro do envio':'Assinatura e provas')+'</h3>'+versaoAnteriorHtml(o, reaceite)+(ATUAL.assinatura?'<img src="'+ATUAL.assinatura+'"'+(reaceite?' style="opacity:.35;filter:grayscale(1)" title="Assinatura da versão anterior"':'')+'>':(ATUAL.ehRecibo?'':'<span class="ajuda">Sem assinatura.</span>'))+(ATUAL.selfie?' <img src="'+ATUAL.selfie+'" style="max-height:110px;border-radius:8px;margin-left:10px">':'')+
       '<div class="ajuda">Assinado em: <b>'+esc_(o.assinadoEm||'–')+'</b> · E-mail confirmado por código: <b>'+esc_(o.emailConfirmado||'–')+'</b> ('+esc_(o.email)+')'+
       '<br>Comprovante com a íntegra enviado ao aluno em: <b>'+esc_(o.comprovanteEm||'–')+'</b>'+
       '<br>IP: '+esc_(o.ip||'–')+' · Dispositivo: '+esc_(o.dispositivo||'–')+
@@ -616,8 +691,17 @@ function desenharDetalhe(aviso, tipoAviso){
   $('aSalvar').onclick=function(){
     var b=this; ocupado(b,'Salvando…');
     adm('admSalvar', o.id, coletar()).then(function(r){ return recarregar(o.id, r.aviso, r.obj.status==='Aguardando novo aceite'?'info':'ok'); })
-      .catch(function(e){ livre(b); msg('msgDet', e.message, 'erro'); });
+      .catch(function(e){
+        livre(b);
+        if(String(e.message).indexOf('MOTIVO_VERSAO')===0){ $('msgDet').className='msg'; pedirMotivoVersao(o, coletar, b); return; }
+        msg('msgDet', e.message, 'erro');
+      });
   };
+  document.querySelectorAll('[data-vtipo]').forEach(function(bt){ bt.onclick=function(){
+    var tipo=bt.getAttribute('data-vtipo'); ocupado(bt,'Salvando…');
+    adm('admMarcarVersaoAnterior', o.id, tipo, ($('vMotivo')||{}).value||'').then(function(){ return recarregar(o.id, '✓ Registrado no histórico.'); })
+      .catch(function(e){ livre(bt); msg('msgDet', e.message, 'erro'); });
+  }; });
   if($('aOutraPasta')) $('aOutraPasta').onclick=function(){
     abrirModalPasta(function(pastaId, nomePasta){
       msg('msgDet','Salvando cópia em "'+nomePasta+'"…','info');
@@ -779,9 +863,12 @@ function carregarOneDrive(){
 /* ---------- Mensagens prontas (WhatsApp e "Copiar mensagem") ---------- */
 function empresaNome(){ return (INICIO&&INICIO.cfg&&INICIO.cfg.empresa_nome)||'R.E.D. English Course'; }
 function msgContrato(o){
-  return 'Olá, '+primeiroNome(o)+'! Aqui é da '+empresaNome()+' 😊\n'+
-    (ATUAL.ehRecibo?'Seu pagamento foi confirmado e o recibo está pronto.':'Seu contrato foi aprovado.')+' Você pode abrir aqui: '+o.pdfUrl+'\n'+
-    'Também enviamos uma cópia para o seu e-mail ('+o.email+').';
+  var aluno=((o.tipo==='MENOR'||o.tipo==='PJ')&&o.alunoNome)?'\n\nAluno(a): '+String(o.alunoNome).trim():'';
+  return 'Oi, '+primeiroNome(o)+'! '+
+    (ATUAL.ehRecibo?'Seu pagamento foi confirmado e o recibo está pronto.':'Seu contrato foi aprovado.')+' ☺️'+aluno+
+    '\n\nVocê pode abrir aqui: '+o.pdfUrl+
+    '\nTambém enviamos uma cópia para o seu e-mail ('+o.email+').'+
+    '\n\nSeja muito bem-vindo(a) à '+empresaNome()+'! ♦️';
 }
 function msgReaceite(o){
   var base=(INICIO&&INICIO.linkAluno)||'';
