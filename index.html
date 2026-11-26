@@ -459,6 +459,9 @@ function assinaturasHtml(d, cfg, assinaturaDataUrl, meta) {
     : '<div style="height:60px;display:inline-block"></div>';
   if (meta.selfie) img += '<img src="' + meta.selfie + '" style="height:90px;width:auto;border-radius:6px;margin-left:16px;display:inline-block;vertical-align:bottom">';
   img = '<div>' + img + '</div>';
+  var assEmp = meta.assinaturaEmpresa
+    ? '<div><img src="' + meta.assinaturaEmpresa + '" style="height:60px;max-width:260px;display:inline-block;vertical-align:bottom"></div>'
+    : '<div style="height:60px"></div>';
   var registro = meta.assinadoEm
     ? '<p class="ct-reg">Assinado eletronicamente em ' + esc_(meta.assinadoEm) +
       (meta.email ? ', com confirmação por código enviado para ' + esc_(meta.email) : '') +
@@ -473,7 +476,7 @@ function assinaturasHtml(d, cfg, assinaturaDataUrl, meta) {
     : '';
   if (meta.recibo) {
     return '<div class="ct-ass"><div class="ct-ass-bloco"><div class="ct-ass-tit">EMITIDO POR ' + esc_(cfg.empresa_nome || '') + '</div>' +
-      '<div style="height:50px"></div><div class="ct-linha"></div><div>' + esc_(cfg.empresa_rep_nome || '') +
+      assEmp + '<div class="ct-linha"></div><div>' + esc_(cfg.empresa_rep_nome || '') +
       '<br>' + esc_(cfg.empresa_rep_cargo || '') + '</div></div>' +
       (meta.id ? '<p class="ct-reg">Recibo nº ' + esc_(meta.id) + (meta.assinadoEm ? ' · dados e comprovante enviados pelo aluno em ' + esc_(meta.assinadoEm) +
         (meta.email ? ' (e-mail ' + esc_(meta.email) + ' confirmado por código)' : '') : '') + '.</p>' : '') + '</div>';
@@ -482,11 +485,15 @@ function assinaturasHtml(d, cfg, assinaturaDataUrl, meta) {
     '<div class="ct-ass-bloco"><div class="ct-ass-tit">CONTRATANTE</div>' + img +
       '<div class="ct-linha"></div><div>' + docContratante + '</div></div>' +
     '<div class="ct-ass-bloco"><div class="ct-ass-tit">REPRESENTANTE LEGAL ' + esc_(cfg.empresa_nome || '') + '</div>' +
-      '<div style="height:60px"></div><div class="ct-linha"></div><div>' +
+      assEmp + '<div class="ct-linha"></div><div>' +
       esc_(cfg.empresa_rep_nome || '') + (cfg.empresa_rep_cpf ? ' – CPF: ' + esc_(cfg.empresa_rep_cpf) : '') +
       '<br>' + esc_(cfg.empresa_rep_cargo || '') + '</div></div>' +
     '<div class="ct-ass-bloco"><div class="ct-ass-tit">TESTEMUNHAS</div>' +
-      '<div>1: ' + esc_(cfg.testemunha1 || '') + '</div><div>2: ' + esc_(cfg.testemunha2 || '') + '</div></div>' +
+      [1, 2].map(function (i) {
+        var im = meta['assinaturaTestemunha' + i];
+        return '<div style="margin-bottom:12px">' + (im ? '<div><img src="' + im + '" style="height:50px;max-width:240px;display:inline-block;vertical-align:bottom"></div>' : '<div style="height:40px"></div>') +
+          '<div class="ct-linha"></div><div>' + i + ': ' + esc_(cfg['testemunha' + i] || '') + '</div></div>';
+      }).join('') + '</div>' +
     registro + '</div>';
 }
 
