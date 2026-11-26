@@ -182,6 +182,10 @@
 <div class="tela" id="tPastas">
   <div class="detalhe">
     <div class="msg" id="msgPastas"></div>
+    <div class="card" id="cardOneDrive">
+      <h3>OneDrive (Microsoft)</h3>
+      <div id="odStatus" class="ajuda" style="margin-top:0">Carregando…</div>
+    </div>
     <div class="card">
       <h3>Pastas do Drive</h3>
       <p class="ajuda" style="margin-top:0">Aqui você navega, cria, renomeia e exclui pastas dentro das pastas de <b>Contratos</b> e de <b>Recibos</b>. Por segurança, só pastas vazias podem ser excluídas (vão para a lixeira do Drive).</p>
@@ -340,6 +344,9 @@ function assinaturasHtml(d, cfg, assinaturaDataUrl, meta) {
     : '<div style="height:60px;display:inline-block"></div>';
   if (meta.selfie) img += '<img src="' + meta.selfie + '" style="height:90px;width:auto;border-radius:6px;margin-left:16px;display:inline-block;vertical-align:bottom">';
   img = '<div>' + img + '</div>';
+  var assEmp = meta.assinaturaEmpresa
+    ? '<div><img src="' + meta.assinaturaEmpresa + '" style="height:60px;max-width:260px;display:inline-block;vertical-align:bottom"></div>'
+    : '<div style="height:60px"></div>';
   var registro = meta.assinadoEm
     ? '<p class="ct-reg">Assinado eletronicamente em ' + esc_(meta.assinadoEm) +
       (meta.email ? ', com confirmação por código enviado para ' + esc_(meta.email) : '') +
@@ -354,7 +361,7 @@ function assinaturasHtml(d, cfg, assinaturaDataUrl, meta) {
     : '';
   if (meta.recibo) {
     return '<div class="ct-ass"><div class="ct-ass-bloco"><div class="ct-ass-tit">EMITIDO POR ' + esc_(cfg.empresa_nome || '') + '</div>' +
-      '<div style="height:50px"></div><div class="ct-linha"></div><div>' + esc_(cfg.empresa_rep_nome || '') +
+      assEmp + '<div class="ct-linha"></div><div>' + esc_(cfg.empresa_rep_nome || '') +
       '<br>' + esc_(cfg.empresa_rep_cargo || '') + '</div></div>' +
       (meta.id ? '<p class="ct-reg">Recibo nº ' + esc_(meta.id) + (meta.assinadoEm ? ' · dados e comprovante enviados pelo aluno em ' + esc_(meta.assinadoEm) +
         (meta.email ? ' (e-mail ' + esc_(meta.email) + ' confirmado por código)' : '') : '') + '.</p>' : '') + '</div>';
@@ -363,11 +370,15 @@ function assinaturasHtml(d, cfg, assinaturaDataUrl, meta) {
     '<div class="ct-ass-bloco"><div class="ct-ass-tit">CONTRATANTE</div>' + img +
       '<div class="ct-linha"></div><div>' + docContratante + '</div></div>' +
     '<div class="ct-ass-bloco"><div class="ct-ass-tit">REPRESENTANTE LEGAL ' + esc_(cfg.empresa_nome || '') + '</div>' +
-      '<div style="height:60px"></div><div class="ct-linha"></div><div>' +
+      assEmp + '<div class="ct-linha"></div><div>' +
       esc_(cfg.empresa_rep_nome || '') + (cfg.empresa_rep_cpf ? ' – CPF: ' + esc_(cfg.empresa_rep_cpf) : '') +
       '<br>' + esc_(cfg.empresa_rep_cargo || '') + '</div></div>' +
     '<div class="ct-ass-bloco"><div class="ct-ass-tit">TESTEMUNHAS</div>' +
-      '<div>1: ' + esc_(cfg.testemunha1 || '') + '</div><div>2: ' + esc_(cfg.testemunha2 || '') + '</div></div>' +
+      [1, 2].map(function (i) {
+        var im = meta['assinaturaTestemunha' + i];
+        return '<div style="margin-bottom:12px">' + (im ? '<div><img src="' + im + '" style="height:50px;max-width:240px;display:inline-block;vertical-align:bottom"></div>' : '<div style="height:40px"></div>') +
+          '<div class="ct-linha"></div><div>' + i + ': ' + esc_(cfg['testemunha' + i] || '') + '</div></div>';
+      }).join('') + '</div>' +
     registro + '</div>';
 }
 
@@ -430,6 +441,7 @@ document.querySelectorAll('.aba').forEach(function(b){
     b.classList.add('ativa'); $(b.dataset.tela).classList.add('ativa');
     if(b.dataset.tela==='tModelos' && !MODELOS) carregarModelos();
     if(b.dataset.tela==='tPastas' && !NAV_PASTAS) NAV_PASTAS=montarNavegador($('navPastas'), null, 'msgPastas');
+    if(b.dataset.tela==='tPastas') carregarOneDrive();
   });
 });
 
@@ -442,7 +454,7 @@ function carregarLista(selecionar){
   adm('admListar').then(function(l){ LISTA=l; desenharLista(); if(selecionar) abrir(selecionar); })
     .catch(function(e){ $('itens').innerHTML='<div class="vazio">'+esc_(e.message)+'</div>'; });
 }
-var SO_NEG=false;
+var SO_NEG=false, SO_APR=false;
 function desenharContadores(){
   var st=$('filtroStatus').value;
   var conta=function(f){ return LISTA.filter(f).length; };
@@ -450,16 +462,17 @@ function desenharContadores(){
     ['Pendente','Aguardando aprovação',conta(function(c){ return c.status==='Pendente'; }),'var(--verm)'],
     ['__NEG','Com indicações',conta(function(c){ return c.indicacoes>0; }),'var(--azul)'],
     ['Aguardando novo aceite','Aguardando novo aceite',conta(function(c){ return c.status==='Aguardando novo aceite'; }),'var(--texto)'],
-    ['Aprovado','Aprovados',conta(function(c){ return c.status==='Aprovado'; }),'var(--verde)']
+    ['__APR','Aprovados',conta(function(c){ return c.status==='Aprovado' || c.status==='Enviado'; }),'var(--verde)']
   ];
   $('contadores').innerHTML=itens.map(function(it){
-    var on = it[0]==='__NEG' ? SO_NEG : (!SO_NEG && st===it[0]);
+    var on = it[0]==='__NEG' ? SO_NEG : it[0]==='__APR' ? SO_APR : (!SO_NEG && !SO_APR && st===it[0]);
     return '<button type="button" class="cont'+(on?' on':'')+'" data-f="'+esc_(it[0])+'"><span class="r">'+esc_(it[1])+'</span><span class="v" style="color:'+it[3]+'">'+it[2]+'</span></button>';
   }).join('');
   $('contadores').querySelectorAll('.cont').forEach(function(b){ b.addEventListener('click', function(){
     var f=b.dataset.f;
-    if(f==='__NEG'){ SO_NEG=!SO_NEG; $('filtroStatus').value=''; }
-    else { SO_NEG=false; $('filtroStatus').value = ($('filtroStatus').value===f ? '' : f); }
+    if(f==='__NEG'){ SO_NEG=!SO_NEG; SO_APR=false; $('filtroStatus').value=''; }
+    else if(f==='__APR'){ SO_APR=!SO_APR; SO_NEG=false; $('filtroStatus').value=''; }
+    else { SO_NEG=false; SO_APR=false; $('filtroStatus').value = ($('filtroStatus').value===f ? '' : f); }
     desenharLista();
   }); });
 }
@@ -467,7 +480,7 @@ function desenharLista(){
   var q=$('busca').value.trim().toLowerCase(), st=$('filtroStatus').value;
   desenharContadores();
   var l=LISTA.filter(function(c){
-    return (!SO_NEG || c.indicacoes>0) && (!st || c.status===st) && (!q || (c.nome+' '+c.aluno+' '+c.id).toLowerCase().indexOf(q)>=0);
+    return (!SO_NEG || c.indicacoes>0) && (!SO_APR || c.status==='Aprovado' || c.status==='Enviado') && (!st || c.status===st) && (!q || (c.nome+' '+c.aluno+' '+c.id).toLowerCase().indexOf(q)>=0);
   });
   $('itens').innerHTML = l.length ? l.map(function(c){
     return '<div class="item'+(ATUAL&&ATUAL.obj.id===c.id?' sel':'')+'" data-id="'+esc_(c.id)+'">'+
@@ -479,7 +492,7 @@ function desenharLista(){
   document.querySelectorAll('.item').forEach(function(el){ el.addEventListener('click', function(){ abrir(el.dataset.id); }); });
 }
 $('busca').addEventListener('input', desenharLista);
-$('filtroStatus').addEventListener('change', function(){ SO_NEG=false; desenharLista(); });
+$('filtroStatus').addEventListener('change', function(){ SO_NEG=false; SO_APR=false; desenharLista(); });
 $('btnAtualizar').addEventListener('click', function(){ carregarLista(ATUAL && ATUAL.obj.id); });
 
 var CAMPOS_FORM = {
@@ -550,6 +563,8 @@ function desenharDetalhe(aviso, tipoAviso){
       '<button class="b3" id="aAprovar"'+(reaceite?' disabled title="Aguardando o aluno aceitar a nova versão"':(cpfPend?' disabled title="Confira o CPF na Receita e marque como Regular"':''))+'>'+(ATUAL.ehRecibo?(temPdf?'Gerar recibo de novo':'Confirmar pagamento e gerar recibo'):(temPdf?'Gerar PDF de novo':'Aprovar e gerar PDF'))+'</button>'+
       '<button class="b1" id="aEmail"'+(temPdf?'':' disabled title="Aprove primeiro"')+'>Enviar por e-mail</button>'+
       '<button class="b4" id="aWhats"'+(temPdf?'':' disabled title="Aprove primeiro"')+'>WhatsApp</button>'+
+      '<button class="b2" id="aCopiarMsg"'+(temPdf?'':' disabled title="Aprove primeiro"')+'>Copiar mensagem</button>'+
+      (temPdf?'<a class="b2" id="aBaixar" style="text-decoration:none;display:inline-flex;align-items:center;padding:9px 14px;border-radius:10px;font-weight:600" href="https://drive.google.com/uc?export=download&id='+encodeURIComponent(o.pdfId)+'" target="_blank" rel="noopener">Baixar PDF</a>':'<button class="b2" disabled title="Aprove primeiro">Baixar PDF</button>')+
       '<button class="bx" id="aExcluir">Excluir</button>'+
     '</div></div>'+
     '<div class="msg" id="msgDet"></div>'+
@@ -560,12 +575,13 @@ function desenharDetalhe(aviso, tipoAviso){
     (o.negociar ? '<div class="alerta"><b>O aluno quer negociar:</b> <span id="txtNeg">'+esc_(o.negociar)+'</span>'+
       '<div class="barra" style="margin-top:8px"><button class="b3 mini" id="negConcluir">✓ Negociação concluída</button><button class="b2 mini" id="negEditar">Editar</button><button class="bx mini" id="negRemover">Remover</button></div></div>' : '')+
     (reaceite ? '<div class="alerta">O contrato foi alterado e o aluno precisa assinar a nova versão.<div class="barra" style="margin-top:8px">'+
-      '<button class="b1" id="aReaceite">Enviar link de novo aceite (e-mail + WhatsApp)</button></div></div>' : '')+
+      '<button class="b1" id="aReaceite">Enviar link de novo aceite (e-mail + WhatsApp)</button><button class="b2" id="aReaceiteCopiar">Copiar mensagem com o link</button></div></div>' : '')+
+    organizarTurmaHtml()+
     (ATUAL.ehRecibo ? '<div class="card'+(o.pdfId?'':' card-alerta')+'"><h3>Comprovante do PIX</h3>'+
       (o.pagamentoUrl ? '<a class="b2 mini lk" href="'+esc_(o.pagamentoUrl)+'">Abrir comprovante enviado pelo aluno ↗</a>' : '<span class="ajuda">Nenhum comprovante anexado.</span>')+
       '<p class="ajuda" style="margin-bottom:0">Confira no extrato da conta se o PIX de <b>R$ '+esc_(o.valorParcela)+'</b> realmente entrou antes de confirmar. Data informada pelo aluno: <b>'+esc_(o.primeiroPagamento)+'</b>.</p></div>' : '')+
     receitaHtml()+
-    (temPdf ? '<div class="card"><h3>PDF</h3><a href="'+esc_(o.pdfUrl)+'">Abrir PDF no Drive</a>'+(o.pdfMesPasta?' · cópia na pasta <b>'+esc_(o.pdfMesPasta)+'</b>':' · <span style="color:#991b1b">sem cópia '+(ATUAL.ehRecibo?'na pasta dos recibos':'na pasta do mês')+'</span> <button class="b2 mini" id="aCopiarMes">'+(ATUAL.ehRecibo?'Salvar cópia na pasta dos recibos':'Salvar cópia na pasta do mês')+'</button>')+' <button class="b2 mini" id="aOutraPasta">Salvar cópia em outra pasta…</button>'+(o.emailEnviadoEm?' · e-mail enviado em '+esc_(o.emailEnviadoEm):'')+'</div>' : '')+
+    (temPdf ? '<div class="card"><h3>PDF</h3><a href="'+esc_(o.pdfUrl)+'">Abrir PDF no Drive</a>'+(o.pdfMesPasta?' · cópia na pasta <b>'+esc_(o.pdfMesPasta)+'</b>':' · <span style="color:#991b1b">sem cópia '+(ATUAL.ehRecibo?'na pasta dos recibos':'na pasta do mês')+'</span> <button class="b2 mini" id="aCopiarMes">'+(ATUAL.ehRecibo?'Salvar cópia na pasta dos recibos':'Salvar cópia na pasta do mês')+'</button>')+' <button class="b2 mini" id="aOutraPasta">Salvar cópia em outra pasta…</button>'+(ATUAL.ehRecibo?'':(o.onedriveId?' · <b style="color:#1E7A46">cópia no OneDrive ✓</b>':' · <span style="color:#5B6272">sem cópia no OneDrive</span> <button class="b2 mini" id="aOneDrive">Salvar cópia no OneDrive</button>'))+(o.emailEnviadoEm?' · e-mail enviado em '+esc_(o.emailEnviadoEm):'')+'</div>' : '')+
     '<div class="card"><h3>Dados de cadastro</h3><p class="ajuda" style="margin-top:0">Correções aqui não exigem nova assinatura. A planilha de matrículas não é alterada: se precisar, corrija lá manualmente.</p><div class="grade">'+camposHtml(CAMPOS_FORM.cadastro,o)+'</div></div>'+
     '<div class="card"><h3>Plano e pagamento</h3><p class="ajuda" style="margin-top:0">'+(ATUAL.ehRecibo?'Ajustes aqui entram no recibo (não exigem nova assinatura).':'Mudar qualquer item daqui altera o contrato: o aluno terá de assinar de novo.')+'</p><div class="grade">'+camposHtml(CAMPOS_FORM.contrato,o)+'</div></div>'+
     '<div class="card"><h3>'+(ATUAL.ehRecibo?'Texto deste recibo':'Texto deste contrato')+'</h3><p class="ajuda" style="margin-top:0">'+(ATUAL.ehRecibo?'Ajuste só se precisar mudar algo neste recibo.':'Use para negociar cláusulas só deste aluno. Ao salvar, o aluno recebe a nova versão para assinar.')+'</p>'+
@@ -651,21 +667,47 @@ function desenharDetalhe(aviso, tipoAviso){
   };
   $('aWhats').onclick=function(){
     // Abre na hora, sem esperar o servidor
-    var empresa=(INICIO&&INICIO.cfg&&INICIO.cfg.empresa_nome)||'R.E.D. English Course';
-    var texto='Olá, '+primeiroNome(o)+'! Aqui é da '+empresa+' 😊\n'+
-      (ATUAL.ehRecibo?'Seu pagamento foi confirmado e o recibo está pronto.':'Seu contrato foi aprovado.')+' Você pode abrir aqui: '+o.pdfUrl+'\n'+
-      'Também enviamos uma cópia para o seu e-mail ('+o.email+').';
+    var texto=msgContrato(o);
     window.open(linkWhats(o.whatsapp, texto),'_blank');
     msg('msgDet','✓ WhatsApp aberto com a mensagem pronta. Confira e clique em enviar lá no WhatsApp.');
     adm('admWhatsApp', o.id).catch(function(){}); // só libera o PDF e registra no histórico
   };
-  if($('aReaceite')) $('aReaceite').onclick=function(){
-    var base=(INICIO&&INICIO.linkAluno)||'';
-    var empresa=(INICIO&&INICIO.cfg&&INICIO.cfg.empresa_nome)||'R.E.D. English Course';
-    if(base && o.token){
-      var link=base+(base.indexOf('?')>=0?'&':'?')+'aceite='+encodeURIComponent(o.id)+'&t='+o.token;
-      window.open(linkWhats(o.whatsapp,'Olá, '+primeiroNome(o)+'! Aqui é da '+empresa+'. Atualizamos o seu contrato conforme combinado. Para concluir, leia e assine a nova versão neste link: '+link),'_blank');
+  $('aCopiarMsg').onclick=function(){
+    var b=this;
+    copiarTexto(msgContrato(o), b, function(){
+      msg('msgDet','✓ Mensagem copiada. Cole no WhatsApp (ou onde preferir) e envie para '+primeiroNome(o)+'.');
+      adm('admRegistrar', o.id, 'Mensagem do '+(ATUAL.ehRecibo?'recibo':'contrato')+' copiada para envio manual.').catch(function(){});
+    });
+  };
+  if($('aReaceiteCopiar')) $('aReaceiteCopiar').onclick=function(){
+    var t=msgReaceite(o);
+    if(!t){ msg('msgDet','Não encontrei o link da página do aluno. Confira em Configurações > link_pagina_aluno.','erro'); return; }
+    copiarTexto(t, this, function(){
+      msg('msgDet','✓ Mensagem com o link de novo aceite copiada. Cole no WhatsApp do aluno e envie. (O e-mail não foi enviado: use o outro botão se quiser mandar por e-mail também.)');
+      adm('admRegistrar', o.id, 'Mensagem do link de novo aceite copiada para envio manual.').catch(function(){});
+    });
+  };
+  document.querySelectorAll('[data-coord]').forEach(function(bt){ bt.onclick=function(){
+    var quem=bt.getAttribute('data-coord'), modo=bt.getAttribute('data-modo'), texto=msgCoordenacao(o, quem);
+    var registrar=function(rot){
+      adm('admRegistrar', o.id, 'Contato para organizar a turma feito por '+quem+' ('+rot+').').then(function(r){ ATUAL.obj=r.obj; $('coordHist').innerHTML=coordHistHtml(r.obj); }).catch(function(){});
+    };
+    if(modo==='whats'){
+      window.open(linkWhats(o.whatsapp, texto),'_blank');
+      msg('msgDet','✓ WhatsApp aberto com a mensagem da '+quem.split(' ')[0]+'. Confira e envie lá no WhatsApp.');
+      registrar('WhatsApp');
+    } else {
+      copiarTexto(texto, bt, function(){ msg('msgDet','✓ Mensagem da '+quem.split(' ')[0]+' copiada. Cole no WhatsApp do aluno e envie.'); registrar('mensagem copiada'); });
     }
+  }; });
+  if($('aOneDrive')) $('aOneDrive').onclick=function(){
+    var b=this; ocupado(b,'Enviando…');
+    adm('admOneDriveEnviar', o.id).then(function(r){ return recarregar(o.id, r.aviso, r.aviso.indexOf('ATENÇÃO')>=0?'erro':'ok'); })
+      .catch(function(e){ livre(b); msg('msgDet', e.message, 'erro'); });
+  };
+  if($('aReaceite')) $('aReaceite').onclick=function(){
+    var tr=msgReaceite(o);
+    if(tr) window.open(linkWhats(o.whatsapp, tr),'_blank');
     var b=this, antes=(o.historico||'').length; ocupado(b,'Enviando e-mail…');
     var ok=function(){ return recarregar(o.id,'✓ Link de novo aceite enviado por e-mail. O WhatsApp abriu com a mensagem pronta: confira e clique em enviar.'); };
     adm('admEnviarReaceite', o.id).then(ok).catch(function(e){
@@ -697,6 +739,71 @@ document.addEventListener('click', function(ev){
     }).catch(function(e){ m.disabled=false; m.textContent='Salvar resultado'; msg('msgDet', e.message, 'erro'); });
   }
 });
+/* ---------- OneDrive (aba Pastas) ---------- */
+function carregarOneDrive(){
+  var box=$('odStatus');
+  adm('admOneDriveStatus').then(function(st){
+    var passos='<ol style="margin:6px 0 0 18px;padding:0">'+
+      '<li>No portal da Microsoft (App registrations), em <b>Redirect URI</b> (tipo Web), cole este endereço: <code style="word-break:break-all">'+esc_(st.redirect)+'</code> <button class="b2 mini" data-copiar="'+esc_(st.redirect)+'">copiar</button></li>'+
+      '<li>Na planilha do sistema, aba Configurações, preencha <b>onedrive_client_id</b> e <b>onedrive_client_secret</b>.</li>'+
+      '<li>Volte aqui e clique em <b>Conectar OneDrive</b>.</li></ol>';
+    if(!st.configurado){ box.innerHTML='Ainda não configurado. Os contratos continuam sendo salvos só no Google Drive.'+passos; return; }
+    if(!st.conectado){ box.innerHTML='Configurado, mas <b>não conectado</b>.'+passos+'<div class="barra" style="margin-top:10px"><button class="b1" id="odConectar">Conectar OneDrive</button></div>'; }
+    else box.innerHTML='<b style="color:#1E7A46">Conectado ✓</b>'+(st.conta?' à conta <b>'+esc_(st.conta)+'</b>':'')+'. Cada contrato aprovado vai também para <b>'+esc_(st.pasta)+'</b> (os recibos não vão).'+
+      '<div class="barra" style="margin-top:10px"><button class="b2 mini" id="odConectar">Conectar outra conta</button><button class="bx mini" id="odSair">Desconectar</button></div>';
+    if($('odConectar')) $('odConectar').onclick=function(){
+      var w=window.open('about:blank','_blank');
+      adm('admOneDriveLink').then(function(u){ if(w) w.location=u; else location.href=u; msg('msgPastas','Faça o login na conta Microsoft dona do OneDrive e autorize. Depois volte aqui e clique na aba Pastas de novo para ver o status.','info'); })
+        .catch(function(e){ if(w) w.close(); msg('msgPastas', e.message, 'erro'); });
+    };
+    if($('odSair')) $('odSair').onclick=function(){
+      if(!confirm('Desconectar o OneDrive? Os próximos contratos ficam só no Google Drive.')) return;
+      adm('admOneDriveDesconectar').then(carregarOneDrive);
+    };
+  }).catch(function(e){ box.textContent=e.message; });
+}
+/* ---------- Mensagens prontas (WhatsApp e "Copiar mensagem") ---------- */
+function empresaNome(){ return (INICIO&&INICIO.cfg&&INICIO.cfg.empresa_nome)||'R.E.D. English Course'; }
+function msgContrato(o){
+  return 'Olá, '+primeiroNome(o)+'! Aqui é da '+empresaNome()+' 😊\n'+
+    (ATUAL.ehRecibo?'Seu pagamento foi confirmado e o recibo está pronto.':'Seu contrato foi aprovado.')+' Você pode abrir aqui: '+o.pdfUrl+'\n'+
+    'Também enviamos uma cópia para o seu e-mail ('+o.email+').';
+}
+function msgReaceite(o){
+  var base=(INICIO&&INICIO.linkAluno)||'';
+  if(!base || !o.token) return '';
+  var link=base+(base.indexOf('?')>=0?'&':'?')+'aceite='+encodeURIComponent(o.id)+'&t='+o.token;
+  return 'Olá, '+primeiroNome(o)+'! Aqui é da '+empresaNome()+'. Atualizamos o seu contrato conforme combinado. Para concluir, leia e assine a nova versão neste link: '+link;
+}
+function msgCoordenacao(o, quem){
+  return 'Hey, '+primeiroNome(o)+'! Tudo bem?\n\nMe chamo '+quem+' e faço parte da equipe de coordenação da RED English Course ♦️.\n\nGostaria de falar com você sobre a sua disponibilidade pras aulas, ok?';
+}
+function coordenacao(){ var c=INICIO&&INICIO.cfg&&INICIO.cfg.coordenacao; return (c&&c.length)?c:['Aline Fernandes','Alícia']; }
+function coordHistHtml(o){
+  var l=String(o.historico||'').split('\n').filter(function(x){ return /organizar a turma/i.test(x); });
+  return l.length ? '<div class="ajuda" style="margin-top:8px"><b>Contatos já feitos:</b><br>'+l.slice(-4).map(esc_).join('<br>')+'</div>' : '<div class="ajuda" style="margin-top:8px">Ninguém da coordenação chamou este aluno ainda.</div>';
+}
+function organizarTurmaHtml(){
+  var o=ATUAL.obj;
+  if(o.status!=='Enviado') return '';
+  return '<div class="card" style="box-shadow:0 0 0 2px var(--azul-claro)"><h3>Organizar turma</h3>'+
+    '<p class="ajuda" style="margin-top:0">Para a coordenação chamar '+(o.tipo==='MENOR'?'o responsável':(o.tipo==='PJ'?'o representante':'o aluno'))+' ('+esc_(primeiroNome(o))+') e combinar os horários das aulas.</p>'+
+    coordenacao().map(function(n){
+      return '<div class="barra" style="justify-content:space-between;padding:6px 0;border-bottom:1px solid #EEF0F3"><b>'+esc_(n)+'</b><span class="barra">'+
+        '<button class="b4 mini" data-coord="'+esc_(n)+'" data-modo="whats">WhatsApp</button>'+
+        '<button class="b2 mini" data-coord="'+esc_(n)+'" data-modo="copiar">Copiar mensagem</button></span></div>';
+    }).join('')+'<div id="coordHist">'+coordHistHtml(o)+'</div></div>';
+}
+/* Copia texto (com alternativa para navegadores que bloqueiam a área de transferência). */
+function copiarTexto(texto, botao, depois){
+  var marcar=function(){ if(botao){ var t=botao.textContent; botao.textContent='Copiado ✓'; setTimeout(function(){ botao.textContent=t; },1500); } if(depois) depois(); };
+  var plano=function(){
+    var ta=document.createElement('textarea'); ta.value=texto; ta.setAttribute('readonly',''); ta.style.position='fixed'; ta.style.top='-1000px';
+    document.body.appendChild(ta); ta.select(); var ok=false; try{ ok=document.execCommand('copy'); }catch(e){} document.body.removeChild(ta);
+    if(ok) marcar(); else prompt('Copie a mensagem (Ctrl+C):', texto);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(texto).then(marcar, plano); } else plano();
+}
 function primeiroNome(o){
   var n=String((o.tipo==='PJ'?(o.pjRepNome||o.nome):o.nome)||'').trim().split(' ')[0]||'';
   return n.charAt(0).toUpperCase()+n.slice(1).toLowerCase();
