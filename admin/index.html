@@ -41,7 +41,7 @@
   .tag{display:inline-block;font-size:11px;font-weight:600;border-radius:999px;padding:3px 10px;margin-top:4px}
   .t-Pendente{background:var(--amarelo-claro);color:#5C3D00}.t-Aguardando{background:var(--azul-claro);color:var(--azul)}
   .t-Aprovado{background:#E3F3EA;color:#1E5E38}.t-Enviado{background:#EDEEF1;color:#3A404C}
-  .neg{background:var(--verm-claro);color:#8E0E13}
+  .neg{background:var(--verm-claro);color:#8E0E13}.t-Coord{background:#FDF1D6;color:#7A4F00;box-shadow:inset 0 0 0 1px #F4B63C}
   .detalhe{flex:1;overflow:auto;padding:20px}
   .vazio{color:var(--suave);text-align:center;margin-top:80px}
   .card{background:#fff;border:0;border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(15,45,107,.06)}
@@ -491,7 +491,7 @@ function desenharLista(){
       '<div class="n">'+esc_(c.nome)+'</div>'+
       '<div class="s">'+(c.aluno?'Aluno: '+esc_(c.aluno)+' · ':'')+esc_(c.plano)+'</div>'+
       '<div class="s">'+esc_(c.enviadoEm)+' · '+esc_(c.id)+'</div>'+
-      tagStatus(c.status)+(c.documento==='Recibo de pagamento'?' <span class="tag t-Enviado">sem compromisso</span>':'')+(c.negociar?' <span class="tag neg">quer negociar</span>':'')+(c.indicacoes>0?' <span class="tag t-Aguardando">'+c.indicacoes+(c.indicacoes>1?' indicações':' indicação')+'</span>':'')+'</div>';
+      tagStatus(c.status)+(c.documento==='Recibo de pagamento'?' <span class="tag t-Enviado">sem compromisso</span>':'')+(c.coord?' <span class="tag t-Coord">Coordenação ✓</span>':'')+(c.negociar?' <span class="tag neg">quer negociar</span>':'')+(c.indicacoes>0?' <span class="tag t-Aguardando">'+c.indicacoes+(c.indicacoes>1?' indicações':' indicação')+'</span>':'')+'</div>';
   }).join('') : '<div class="vazio">Nenhum contrato.</div>';
   document.querySelectorAll('.item').forEach(function(el){ el.addEventListener('click', function(){ abrir(el.dataset.id); }); });
 }
@@ -561,7 +561,7 @@ function desenharDetalhe(aviso, tipoAviso){
   $('detalhe').innerHTML =
     '<div class="topo"><div><h2>'+esc_(o.nome)+'</h2>'+
       '<div class="s">'+esc_(o.documento||'Contrato')+' · '+esc_(ATUAL.nomeTipo)+' · '+esc_(o.planoNome)+' · '+esc_(o.id)+' · modelo v'+esc_(o.modeloVersao)+'</div>'+
-      '<div style="margin-top:6px">'+tagStatus(st)+'</div></div>'+
+      '<div style="margin-top:6px">'+tagStatus(st)+(o.coordEnviadoPor?' <span class="tag t-Coord">Coordenação ✓</span>':'')+'</div></div>'+
     '<div class="barra">'+
       '<button class="b2" id="aSalvar">Salvar alterações</button>'+
       '<button class="b3" id="aAprovar"'+(reaceite?' disabled title="Aguardando o aluno aceitar a nova versão"':(cpfPend?' disabled title="Confira o CPF na Receita e marque como Regular"':''))+'>'+(ATUAL.ehRecibo?(temPdf?'Gerar recibo de novo':'Confirmar pagamento e gerar recibo'):(temPdf?'Gerar PDF de novo':'Aprovar e gerar PDF'))+'</button>'+
@@ -691,6 +691,16 @@ function desenharDetalhe(aviso, tipoAviso){
       adm('admRegistrar', o.id, 'Mensagem do link de novo aceite copiada para envio manual.').catch(function(){});
     });
   };
+  document.querySelectorAll('[data-coordok]').forEach(function(bt){ bt.onclick=function(){
+    var quem=bt.getAttribute('data-coordok'); bt.disabled=true;
+    adm('admCoordConfirmar', o.id, quem).then(function(){ return recarregar(o.id, '✓ Marcado: '+quem+' já enviou a mensagem para organizar a turma.'); })
+      .catch(function(e){ bt.disabled=false; msg('msgDet', e.message||String(e), 'erro'); });
+  }; });
+  if($('coordDesfazer')) $('coordDesfazer').onclick=function(){
+    this.disabled=true;
+    adm('admCoordDesfazer', o.id).then(function(){ return recarregar(o.id, 'Confirmação da coordenação desfeita.'); })
+      .catch(function(e){ msg('msgDet', e.message||String(e), 'erro'); });
+  };
   document.querySelectorAll('[data-coord]').forEach(function(bt){ bt.onclick=function(){
     var quem=bt.getAttribute('data-coord'), modo=bt.getAttribute('data-modo'), texto=msgCoordenacao(o, quem);
     var registrar=function(rot){
@@ -785,17 +795,23 @@ function msgCoordenacao(o, quem){
 function coordenacao(){ var c=INICIO&&INICIO.cfg&&INICIO.cfg.coordenacao; return (c&&c.length)?c:['Aline Fernandes','Alícia']; }
 function coordHistHtml(o){
   var l=String(o.historico||'').split('\n').filter(function(x){ return /organizar a turma/i.test(x); });
-  return l.length ? '<div class="ajuda" style="margin-top:8px"><b>Contatos já feitos:</b><br>'+l.slice(-4).map(esc_).join('<br>')+'</div>' : '<div class="ajuda" style="margin-top:8px">Ninguém da coordenação chamou este aluno ainda.</div>';
+  return l.length ? '<div class="ajuda" style="margin-top:8px"><b>Contatos já feitos:</b><br>'+l.slice(-4).map(esc_).join('<br>')+'</div>' : (o.coordEnviadoPor?'':'<div class="ajuda" style="margin-top:8px">Ninguém da coordenação chamou este aluno ainda.</div>');
 }
 function organizarTurmaHtml(){
   var o=ATUAL.obj;
   if(o.status!=='Enviado') return '';
-  return '<div class="card" style="box-shadow:0 0 0 2px var(--azul-claro)"><h3>Organizar turma</h3>'+
-    '<p class="ajuda" style="margin-top:0">Para a coordenação chamar '+(o.tipo==='MENOR'?'o responsável':(o.tipo==='PJ'?'o representante':'o aluno'))+' ('+esc_(primeiroNome(o))+') e combinar os horários das aulas.</p>'+
+  var feito=o.coordEnviadoPor?'<div style="background:#E9F6EE;border-radius:8px;padding:8px 12px;margin:0 0 8px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span style="color:var(--verde);font-size:13px">Mensagem enviada por <b>'+esc_(o.coordEnviadoPor)+'</b> · '+esc_(String(o.coordEnviadoEm||'').slice(0,16))+'</span><button class="b2 mini" id="coordDesfazer">Desfazer</button></div>':'';
+  return '<div class="card" style="box-shadow:0 0 0 2px var(--azul-claro)"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0">Organizar turma</h3>'+(o.coordEnviadoPor?'<span class="tag t-Coord" style="margin:0">Coordenação ✓</span>':'')+'</div>'+feito+
+    '<p class="ajuda" style="margin-top:6px">Para a coordenação chamar '+(o.tipo==='MENOR'?'o responsável':(o.tipo==='PJ'?'o representante':'o aluno'))+' ('+esc_(primeiroNome(o))+') e combinar os horários das aulas.</p>'+
     coordenacao().map(function(n){
-      return '<div class="barra" style="justify-content:space-between;padding:6px 0;border-bottom:1px solid #EEF0F3"><b>'+esc_(n)+'</b><span class="barra">'+
+      var linha='<div class="barra" style="justify-content:space-between;padding:6px 0;border-bottom:1px solid #EEF0F3">';
+      if(o.coordEnviadoPor && o.coordEnviadoPor!==n){
+        return linha+'<b style="color:#5B6272">'+esc_(n)+'</b><span class="ajuda" style="margin:0">Não precisa enviar: '+esc_(o.coordEnviadoPor.split(' ')[0])+' já chamou '+(o.tipo==='MENOR'?'o responsável':(o.tipo==='PJ'?'o representante':'o aluno'))+'</span></div>';
+      }
+      return linha+'<b>'+esc_(n)+'</b><span class="barra">'+
         '<button class="b4 mini" data-coord="'+esc_(n)+'" data-modo="whats">WhatsApp</button>'+
-        '<button class="b2 mini" data-coord="'+esc_(n)+'" data-modo="copiar">Copiar mensagem</button></span></div>';
+        '<button class="b2 mini" data-coord="'+esc_(n)+'" data-modo="copiar">Copiar mensagem</button>'+
+        (o.coordEnviadoPor===n?'<span class="mini" style="display:inline-block;background:#E3F3EA;color:#1E5E38;border-radius:8px;padding:4px 9px;font-size:12px;font-weight:600">Enviado ✓</span>':'<button class="b3 mini" data-coordok="'+esc_(n)+'">Já enviei ✓</button>')+'</span></div>';
     }).join('')+'<div id="coordHist">'+coordHistHtml(o)+'</div></div>';
 }
 /* Copia texto (com alternativa para navegadores que bloqueiam a área de transferência). */
