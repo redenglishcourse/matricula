@@ -448,7 +448,11 @@ document.querySelectorAll('.aba').forEach(function(b){
 var INICIO=null, LISTA=[], ATUAL=null, MODELOS=null;
 
 /* ======================= CONTRATOS ======================= */
-function tagStatus(s){ return '<span class="tag t-'+esc_(String(s).split(' ')[0])+'">'+esc_(s)+'</span>'; }
+function tagStatus(s){
+  // Enviado = já foi aprovado e depois enviado: mostra as duas etapas
+  if(s==='Enviado') return '<span class="tag t-Aprovado">Aprovado</span> <span class="tag t-Enviado">Enviado</span>';
+  return '<span class="tag t-'+esc_(String(s).split(' ')[0])+'">'+esc_(s)+'</span>';
+}
 
 function carregarLista(selecionar){
   adm('admListar').then(function(l){ LISTA=l; desenharLista(); if(selecionar) abrir(selecionar); })
