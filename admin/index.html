@@ -447,8 +447,10 @@ function adm(fn){
     }
     return r;
   }).catch(function(e){
-    if(String(e.message).indexOf('SESSAO')===0){ mostrarLogin('Sua sessão expirou. Entre de novo.'); }
-    throw new Error(String(e.message).replace(/^SESSAO:\s*/,''));
+    // No painel do Apps Script o erro chega como "Error: ..."; aqui tira esse prefixo.
+    var texto=String(e.message).replace(/^(Exception|Error):\s*/,'');
+    if(texto.indexOf('SESSAO')===0){ mostrarLogin('Sua sessão expirou. Entre de novo.'); }
+    throw new Error(texto.replace(/^SESSAO:\s*/,''));
   });
 }
 function mostrarLogin(texto){ $('login').classList.remove('oculto'); if(texto) msg('msgLogin', texto, 'erro'); }
@@ -693,7 +695,7 @@ function desenharDetalhe(aviso, tipoAviso){
     adm('admSalvar', o.id, coletar()).then(function(r){ return recarregar(o.id, r.aviso, r.obj.status==='Aguardando novo aceite'?'info':'ok'); })
       .catch(function(e){
         livre(b);
-        if(String(e.message).indexOf('MOTIVO_VERSAO')===0){ $('msgDet').className='msg'; pedirMotivoVersao(o, coletar, b); return; }
+        if(String(e.message).indexOf('MOTIVO_VERSAO')>=0){ $('msgDet').className='msg'; pedirMotivoVersao(o, coletar, b); return; }
         msg('msgDet', e.message, 'erro');
       });
   };
